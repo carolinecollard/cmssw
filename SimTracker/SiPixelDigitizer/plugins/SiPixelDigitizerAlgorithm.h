@@ -314,12 +314,11 @@ private:
 
   const Parameters DeadModules;
 
- // Caro
+  // Caro
   std::unique_ptr<SiPixelChargeReweightingAlgorithm> TheNewSiPixelChargeReweightingAlgorithmClass;
-//  SiPixelChargeReweightingAlgorithm TheNewSiPixelChargeReweightingAlgorithmClass;
+  //  SiPixelChargeReweightingAlgorithm TheNewSiPixelChargeReweightingAlgorithmClass;
 
-
- /*
+  /*
   // Caro
   // Variables and objects for the charge reweighting using 2D templates
   SiPixelTemplate2D templ2D;

@@ -324,8 +324,6 @@ SiPixelDigitizerAlgorithm::SiPixelDigitizerAlgorithm(const edm::ParameterSet& co
                                                            : nullptr),
       pixelEfficiencies_(conf, AddPixelInefficiency, NumberOfBarrelLayers, NumberOfEndcapDisks),
       pixelAging_(conf, AddPixelAging, NumberOfBarrelLayers, NumberOfEndcapDisks) {
-
-
   LogInfo("PixelDigitizer ") << "SiPixelDigitizerAlgorithm constructed"
                              << "Configuration parameters:"
                              << "Threshold/Gain = "
@@ -1515,11 +1513,12 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
   bool reweighted = false;
   if (UseReweighting) {
     if (hit.processType() == 0) {
-      reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(),makeDigiSimLinks_);
+      reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
+          hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     } else {
       // If it's not the primary particle, use the first hit in the collection as SimHit, which should be the corresponding primary.
-      reweighted =
-          TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight((*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(),makeDigiSimLinks_);
+      reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
+          (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     }
   }
   if (!reweighted) {
@@ -2312,4 +2311,3 @@ void SiPixelDigitizerAlgorithm::module_killing_DB(uint32_t detID) {
     }
   }
 }
-

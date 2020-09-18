@@ -42,8 +42,8 @@ public:
   void init(const edm::EventSetup& es);
 
   typedef std::map<int, SiPixelDigitizerAlgorithm::Amplitude, std::less<int> > signal_map_type;  // from Digi.Skel.
-  typedef signal_map_type::iterator signal_map_iterator;              // from Digi.Skel.
-  typedef signal_map_type::const_iterator signal_map_const_iterator;  // from Digi.Skel.
+  typedef signal_map_type::iterator signal_map_iterator;                                         // from Digi.Skel.
+  typedef signal_map_type::const_iterator signal_map_const_iterator;                             // from Digi.Skel.
 
   bool hitSignalReweight(const PSimHit& hit,
                          std::map<int, float, std::less<int> >& hit_signal,
@@ -62,7 +62,6 @@ private:
   typedef std::vector<edm::ParameterSet> Parameters;
   typedef boost::multi_array<float, 2> array_2d;
 
-
   // Variables and objects for the charge reweighting using 2D templates
   SiPixelTemplate2D templ2D;
   std::vector<bool> xdouble;
@@ -79,13 +78,11 @@ private:
   const SiPixel2DTemplateDBObject* dbobject_den;
   const SiPixel2DTemplateDBObject* dbobject_num;
 
-
   // methods for charge reweighting in irradiated sensors
   int PixelTempRewgt2D(int id_gen, int id_rewgt, array_2d& cluster);
   void printCluster(array_2d& cluster);
   void printCluster(float arr[BXM2][BYM2]);
   void printCluster(float arr[TXSIZE][TYSIZE]);
-
 };
 
 #endif

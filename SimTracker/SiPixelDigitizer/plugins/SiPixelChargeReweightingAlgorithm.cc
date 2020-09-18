@@ -76,7 +76,6 @@ using namespace edm;
 using namespace sipixelobjects;
 
 void SiPixelChargeReweightingAlgorithm::init(const edm::EventSetup& es) {
-  
   // Read template files for charge reweighting
   if (UseReweighting) {
     edm::ESHandle<SiPixel2DTemplateDBObject> SiPixel2DTemp_den;
@@ -109,12 +108,10 @@ SiPixelChargeReweightingAlgorithm::SiPixelChargeReweightingAlgorithm(const edm::
 
       UseReweighting(conf.getParameter<bool>("UseReweighting")),
       PrintClusters(conf.getParameter<bool>("PrintClusters")),
-      PrintTemplates(conf.getParameter<bool>("PrintTemplates"))  {
-
-      LogInfo("PixelDigitizer ") << "SiPixelChargeReweightingAlgorithm constructed"
+      PrintTemplates(conf.getParameter<bool>("PrintTemplates")) {
+  LogInfo("PixelDigitizer ") << "SiPixelChargeReweightingAlgorithm constructed"
                              << "UseReweighting = " << UseReweighting;
 }
-
 
 //=========================================================================
 SiPixelChargeReweightingAlgorithm::~SiPixelChargeReweightingAlgorithm() {
@@ -124,14 +121,14 @@ SiPixelChargeReweightingAlgorithm::~SiPixelChargeReweightingAlgorithm() {
 //============================================================================
 
 bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
-                                                  std::map<int, float, std::less<int> >& hit_signal,
-                                                  const size_t hitIndex,
-                                                  const unsigned int tofBin,
-                                                  const PixelTopology* topol,
-                                                  uint32_t detID,
-                                                  signal_map_type& theSignal,
-                                                  unsigned short int processType,
-                                                  const bool& boolmakeDigiSimLinks) {
+                                                          std::map<int, float, std::less<int> >& hit_signal,
+                                                          const size_t hitIndex,
+                                                          const unsigned int tofBin,
+                                                          const PixelTopology* topol,
+                                                          uint32_t detID,
+                                                          signal_map_type& theSignal,
+                                                          unsigned short int processType,
+                                                          const bool& boolmakeDigiSimLinks) {
   int irow_min = topol->nrows();
   int irow_max = 0;
   int icol_min = topol->ncolumns();
@@ -146,8 +143,9 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
     int chan = (*im).first;
     std::pair<int, int> pixelWithCharge = PixelDigi::channelToPixel(chan);
 
-    hitSignal[chan] += (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
-                                          : SiPixelDigitizerAlgorithm::Amplitude((*im).second, (*im).second));
+    hitSignal[chan] +=
+        (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+                              : SiPixelDigitizerAlgorithm::Amplitude((*im).second, (*im).second));
     chargeBefore += (*im).second;
 
     if (pixelWithCharge.first < irow_min)
@@ -315,7 +313,8 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
           (hitPixel.second + col - THY) >= 0 && (hitPixel.second + col - THY) < topol->ncolumns() && charge > 0) {
         chargeAfter += charge;
         theSignal[PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY)] +=
-            (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, tofBin, charge) : SiPixelDigitizerAlgorithm::Amplitude(charge, charge));
+            (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, tofBin, charge)
+                                  : SiPixelDigitizerAlgorithm::Amplitude(charge, charge));
       }
     }
   }
