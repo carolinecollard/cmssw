@@ -91,7 +91,6 @@ public:
   typedef std::unordered_map<std::string, PixelFEDChannelCollection> PixelFEDChannelCollectionMap;
   const PixelFEDChannelCollectionMap* quality_map;
 
-  // Caro : make it public in order to be able to see it in SiPixelChargeReweightingAlgorithm
   class Amplitude {
   public:
     Amplitude() : _amp(0.0) {}
@@ -314,24 +313,8 @@ private:
 
   const Parameters DeadModules;
 
-  // Caro
   std::unique_ptr<SiPixelChargeReweightingAlgorithm> TheNewSiPixelChargeReweightingAlgorithmClass;
-  //  SiPixelChargeReweightingAlgorithm TheNewSiPixelChargeReweightingAlgorithmClass;
 
-  /*
-  // Caro
-  // Variables and objects for the charge reweighting using 2D templates
-  SiPixelTemplate2D templ2D;
-  std::vector<bool> xdouble;
-  std::vector<bool> ydouble;
-  std::vector<float> track;
-  int IDnum, IDden;
-
-  std::vector<SiPixelTemplateStore2D> templateStores_;
-
-  const SiPixel2DTemplateDBObject* dbobject_den;
-  const SiPixel2DTemplateDBObject* dbobject_num;
-  */
 
 private:
   // Variables
@@ -406,12 +389,6 @@ private:
   const bool AddPixelAging;
   const bool UseReweighting;
 
-  /*
-  // Caro
-  const bool PrintClusters;
-  const bool PrintTemplates;
-  */
-
   // The PDTable
   //HepPDTable *particleTable;
   //ParticleDataTable *particleTable;
@@ -478,23 +455,6 @@ private:
   void module_killing_conf(
       uint32_t detID);  // remove dead modules using the list in the configuration file PixelDigi_cfi.py
   void module_killing_DB(uint32_t detID);  // remove dead modules uisng the list in the DB
-
-  /* 
-  // Caro
-  // methods for charge reweighting in irradiated sensors
-  int PixelTempRewgt2D(int id_gen, int id_rewgt, array_2d& cluster);
-  bool hitSignalReweight(const PSimHit& hit,
-                         std::map<int, float, std::less<int> >& hit_signal,
-                         const size_t hitIndex,
-                         const unsigned int tofBin,
-                         const PixelTopology* topol,
-                         uint32_t detID,
-                         signal_map_type& theSignal,
-                         unsigned short int processType);
-  void printCluster(array_2d& cluster);
-  void printCluster(float arr[BXM2][BYM2]);
-  void printCluster(float arr[TXSIZE][TYSIZE]);
-  */
 
   PixelEfficiencies pixelEfficiencies_;
   const PixelAging pixelAging_;
