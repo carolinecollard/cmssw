@@ -462,7 +462,7 @@ SiPixelDigitizerAlgorithm::PixelEfficiencies::PixelEfficiencies(const edm::Param
       FromConfig = FromConfig && conf.exists("thePixelColEfficiency_BPix4") &&
                    conf.exists("thePixelEfficiency_BPix4") && conf.exists("thePixelChipEfficiency_BPix4");
     if (NumberOfEndcapDisks >= 3)
-      FromConfig = FromConfig && conf.exists("thePixelColEfficiency_FPix4") &&
+      FromConfig = FromConfig && conf.exists("thePixelColEfficiency_FPix3") &&
                    conf.exists("thePixelEfficiency_FPix3") && conf.exists("thePixelChipEfficiency_FPix3");
     if (FromConfig) {
       LogInfo("PixelDigitizer ") << "The PixelDigitizer inefficiency configuration is read from the config file.\n";
