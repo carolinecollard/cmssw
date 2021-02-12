@@ -139,6 +139,10 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
   signal_map_type hitSignal;
   LocalVector direction = hit.exitPoint() - hit.entryPoint();
 
+
+
+  std::cout << "       hitIndex in ChargeRew  " << hitIndex << std::endl;
+
   for (std::map<int, float, std::less<int> >::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
     int chan = (*im).first;
     std::pair<int, int> pixelWithCharge = PixelDigi::channelToPixel(chan);
@@ -147,6 +151,8 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
         (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
                               : SiPixelDigitizerAlgorithm::Amplitude((*im).second, (*im).second));
     chargeBefore += (*im).second;
+
+    std::cout << "        --> chan " << chan << " amplitude " << (*im).second << std::endl;
 
     if (pixelWithCharge.first < irow_min)
       irow_min = pixelWithCharge.first;
@@ -238,6 +244,9 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
 
   if (!(irow_min <= hitrow_max && irow_max >= hitrow_min && icol_min <= hitcol_max && icol_max >= hitcol_min)) {
     // The clusters do not have an overlap, hence the hit is NOT reweighted
+     std::cout << " clus not reweight as no overlap, " 
+                              << "row min: " << irow_min << " col min: " << icol_min 
+                              << "row max: " << irow_max << " col min: " << icol_max << std::endl;
     return false;
   }
 
@@ -287,6 +296,7 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
     int ID0 = dbobject_den->getTemplateID(detID);
 
     if (ID0 == ID1) {
+      std::cout << " same template for num and den " << std::endl;
       return false;
     }
     ierr = PixelTempRewgt2D(ID0, ID1, pixrewgt);
@@ -297,6 +307,7 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
 #ifdef TP_DEBUG
     LogDebug("PixelDigitizer ") << "Cluster Charge Reweighting did not work properly.";
 #endif
+    std::cout << " Cluster Charge Reweighting did not work properly." << std::endl;
     return false;
   }
 
@@ -315,11 +326,14 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
         theSignal[PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY)] +=
             (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, tofBin, charge)
                                   : SiPixelDigitizerAlgorithm::Amplitude(charge, charge));
+
+        std::cout << "        --> reweighted chan " << PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY) << " amplitude " << charge << std::endl;
       }
     }
   }
 
   if (chargeBefore != 0. && chargeAfter == 0.) {
+    std::cout << " chargeAfter = 0 while chargeBefore not "  << std::endl;
     return false;
   }
 

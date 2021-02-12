@@ -8,8 +8,10 @@ from SimGeneral.MixingModule.digitizers_cfi import *
 mix = cms.EDProducer("MixingModule",
     digitizers = cms.PSet(theDigitizers),
     LabelPlayback = cms.string(''),
-    maxBunch = cms.int32(3),
-    minBunch = cms.int32(-5), ## in terms of 25 nsec
+    maxBunch = cms.int32(0),
+    minBunch = cms.int32(0), ## in terms of 25 nsec
+#    maxBunch = cms.int32(3),
+#    minBunch = cms.int32(-5), ## in terms of 25 nsec
 
     bunchspace = cms.int32(450), ##ns
     mixProdStep1 = cms.bool(False),

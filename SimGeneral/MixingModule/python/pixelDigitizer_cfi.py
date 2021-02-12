@@ -6,7 +6,8 @@ pixelDigitizer = cms.PSet(
     SiPixelSimBlock,
     accumulatorType = cms.string("SiPixelDigitizer"),
     hitsProducer = cms.string('g4SimHits'),
-    makeDigiSimLinks = cms.untracked.bool(True)
+    makeDigiSimLinks = cms.untracked.bool(True),
+    store_SimHitEntryExitPoints = cms.untracked.bool(False)
 )
 from Configuration.ProcessModifiers.premix_stage1_cff import premix_stage1
 premix_stage1.toModify(pixelDigitizer, makeDigiSimLinks = False)

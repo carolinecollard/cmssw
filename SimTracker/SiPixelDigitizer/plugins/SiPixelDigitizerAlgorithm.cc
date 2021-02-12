@@ -175,7 +175,29 @@ void SiPixelDigitizerAlgorithm::init(const edm::EventSetup& es) {
     }
   }
 
+  std::cout << " Caro Test store_SimHitEntryExitPoints_ " << store_SimHitEntryExitPoints_ << std::endl;
+
   TheNewSiPixelChargeReweightingAlgorithmClass->init(es);
+
+  int collectionIndex=0; // I don't find what are the different collections here
+  int tofBin=0;
+  std::cout << " init of the SimHitCollMap " << std::endl;
+  for (int i1=1; i1<3; i1++) {
+     for (int i2=0; i2<2; i2++) {
+        if (i2==0) {
+          tofBin = PixelDigiSimLink::LowTof;
+          std::cout << " PixelDigiSimLink::LowTof " << tofBin << std::endl;
+        }
+        else  {
+          tofBin = PixelDigiSimLink::HighTof;
+          std::cout << " PixelDigiSimLink::HighTof " << tofBin << std::endl;
+        }
+        subDetTofBin theSubDetTofBin = std::make_pair(i1, tofBin);
+        SimHitCollMap[theSubDetTofBin] = collectionIndex;
+        std::cout << " collection " <<  collectionIndex << " for  ( " << i1 << ",  " << i2 << ") " << std::endl;
+        collectionIndex++;
+     }
+  }
 }
 
 //=========================================================================
@@ -187,6 +209,7 @@ SiPixelDigitizerAlgorithm::SiPixelDigitizerAlgorithm(const edm::ParameterSet& co
           conf.getParameter<std::string>("SiPixelQualityLabel")),  //string to specify SiPixelQuality label
       _signal(),
       makeDigiSimLinks_(conf.getUntrackedParameter<bool>("makeDigiSimLinks", true)),
+      store_SimHitEntryExitPoints_(conf.getUntrackedParameter<bool>("store_SimHitEntryExitPoints_", true)),
       use_ineff_from_db_(conf.getParameter<bool>("useDB")),
       use_module_killing_(conf.getParameter<bool>("killModules")),       // boolean to kill or not modules
       use_deadmodule_DB_(conf.getParameter<bool>("DeadModules_DB")),     // boolean to access dead modules from DB
@@ -982,6 +1005,7 @@ void SiPixelDigitizerAlgorithm::setSimAccumulator(const std::map<uint32_t, std::
 void SiPixelDigitizerAlgorithm::digitize(const PixelGeomDetUnit* pixdet,
                                          std::vector<PixelDigi>& digis,
                                          std::vector<PixelDigiSimLink>& simlinks,
+                                         std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
                                          const TrackerTopology* tTopo,
                                          CLHEP::HepRandomEngine* engine) {
   // Pixel Efficiency moved from the constructor to this method because
@@ -1066,7 +1090,7 @@ void SiPixelDigitizerAlgorithm::digitize(const PixelGeomDetUnit* pixdet,
     }
   }
 
-  make_digis(thePixelThresholdInE, detID, pixdet, digis, simlinks, tTopo);
+  make_digis(thePixelThresholdInE, detID, pixdet, digis, simlinks, newClass_Digi_extra, tTopo);
 
 #ifdef TP_DEBUG
   LogDebug("PixelDigitizer") << "[SiPixelDigitizerAlgorithm] converted " << digis.size() << " PixelDigis in DetUnit"
@@ -1511,20 +1535,25 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
   // Fill the global map with all hit pixels from this event
 
   bool reweighted = false;
+  bool makeDSLinks = store_SimHitEntryExitPoints_ || makeDigiSimLinks_ ;
+
   if (UseReweighting) {
     if (hit.processType() == 0) {
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
-          hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
+            hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
+ //         hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     } else {
       // If it's not the primary particle, use the first hit in the collection as SimHit, which should be the corresponding primary.
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
-          (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
+            (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
+//          (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     }
   }
   if (!reweighted) {
     for (hit_map_type::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
       int chan = (*im).first;
-      theSignal[chan] += (makeDigiSimLinks_ ? Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+//      theSignal[chan] += (makeDigiSimLinks_ ? Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+        theSignal[chan] += (makeDSLinks ? Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
                                             : Amplitude((*im).second, (*im).second));
 
 #ifdef TP_DEBUG
@@ -1533,6 +1562,11 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
 #endif
     }
   }
+  // store here the SimHit map for later
+  subDetTofBin theSubDetTofBin = std::make_pair(DetId(detID).subdetId(), tofBin);
+  SimHitMap[SimHitCollMap[theSubDetTofBin]].push_back(hit);
+  std::cout << " in induce_signal : filling the SimHitMap map "<<  SimHitCollMap[theSubDetTofBin] << " = (" << DetId(detID).subdetId() <<   ", " << tofBin << ")   hitIndex  " << hitIndex << std::endl;
+  
 
 }  // end induce_signal
 
@@ -1544,6 +1578,7 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
                                            const PixelGeomDetUnit* pixdet,
                                            std::vector<PixelDigi>& digis,
                                            std::vector<PixelDigiSimLink>& simlinks,
+                                           std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
                                            const TrackerTopology* tTopo) const {
 #ifdef TP_DEBUG
   LogDebug("Pixel Digitizer") << " make digis "
@@ -1628,6 +1663,32 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
         }
         simi.clear();  // although should be empty already
       }
+
+
+      // need to fill the SimHitCollMap somewhere before...
+      if (store_SimHitEntryExitPoints_ && !(*i).second.hitInfos().empty()) {
+        // get info stored, like in simlinks...
+        
+        for (const auto& info : (*i).second.hitInfos()) {
+           unsigned int currentCFPos = info.hitIndex();
+           unsigned int tofBin = info.tofBin();
+           // then inspired by https://github.com/cms-sw/cmssw/blob/master/SimTracker/TrackerHitAssociation/src/TrackerHitAssociator.cc#L566 :
+           subDetTofBin theSubDetTofBin = std::make_pair(DetId(detID).subdetId(), tofBin); 
+           auto it = SimHitCollMap.find(theSubDetTofBin);
+           if (it != SimHitCollMap.end()) {
+            auto it2 = SimHitMap.find((it->second));
+            if (it2 != SimHitMap.end()) {
+              const PSimHit& theSimHit = (it2->second)[currentCFPos];
+              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
+              std::cout << "for digi " << chan << " with " << adc << " adc in " << (uint32_t) detID 
+                      << " : SimHit found in (" << DetId(detID).subdetId() << ", "  <<  tofBin <<") " 
+                      << info.hitIndex() << "  "  << theSimHit.energyLoss() << "  " << theSimHit.entryPoint() << " " << theSimHit.exitPoint() << std::endl;
+            }
+           }
+        }
+         
+         std::cout << "in SiPixelDigitizerAlgorithm::make_digis should store here the SimHit extra info per digi " << chan << std::endl;
+      }  // end if store_SimHitEntryExitPoints_
     }
   }
 }

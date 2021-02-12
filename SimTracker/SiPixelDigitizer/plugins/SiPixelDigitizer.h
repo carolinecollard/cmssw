@@ -102,6 +102,12 @@ namespace cms {
     const bool pilotBlades;         // Default = false
     const int NumberOfEndcapDisks;  // Default = 2
 
+
+    int Val1Digi1Simhit;
+    int Val1Digi2Simhit;
+    int Val1Digi3Simhit;
+    int Val1Digi4Simhit;
+
     // infrastructure to reject dead pixels as defined in db (added by F.Blekman)
   };
 }  // namespace cms

@@ -294,8 +294,10 @@ void PreMixingSiPixelWorker::put(edm::Event& e,
       edm::DetSet<PixelDigi> collector(iu->geographicalId().rawId());
       edm::DetSet<PixelDigiSimLink> linkcollector(
           iu->geographicalId().rawId());  // ignored as DigiSimLinks are combined separately
+      std::vector<PixelDigiAddTempInfo> tempcollector; // to be ignored ?
 
-      digitizer_.digitize(dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data, tTopo, engine);
+//      digitizer_.digitize(dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data, tTopo, engine);
+      digitizer_.digitize(dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data, tempcollector, tTopo, engine);
       if (!collector.data.empty()) {
         theDigiVector.push_back(std::move(collector));
       }

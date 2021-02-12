@@ -23,6 +23,7 @@
 
 // user include files
 #include "SiPixelDigitizer.h"
+#include "PixelDigiAddTempInfo.h"
 #include "SiPixelDigitizerAlgorithm.h"
 
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
@@ -166,6 +167,12 @@ namespace cms {
       firstInitializeEvent_ = false;
     }
 
+    std::cout << " SiPixelDigitizer initializeEvent " << std::endl;
+    Val1Digi1Simhit=0;
+    Val1Digi2Simhit=0;
+    Val1Digi3Simhit=0;
+    Val1Digi4Simhit=0;
+
     // Make sure that the first crossing processed starts indexing the sim hits from zero.
     // This variable is used so that the sim hits from all crossing frames have sequential
     // indices used to create the digi-sim link (if configured to do so) rather than starting
@@ -219,7 +226,9 @@ namespace cms {
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
-      //       std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() << std::endl;
+             std::cout << "in SiPixelDigitizer::accumulate Event " << tag.encode() << std::endl;
+             std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() 
+                       << "-> total " << crossingSimHitIndexOffset_[tag.encode()]+simHits->size()  << std::endl;
       if (simHits.isValid())
         crossingSimHitIndexOffset_[tag.encode()] += simHits->size();
     }
@@ -242,7 +251,9 @@ namespace cms {
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
-      //       std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() << std::endl;
+             std::cout << "in SiPixelDigitizer::accumulate PileUpEventPrincipal "  << iEvent.bunchCrossing() << "  " << tag.encode() << std::endl;
+             std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() 
+                       << "-> total " << crossingSimHitIndexOffset_[tag.encode()]+simHits->size()  << std::endl;
       if (simHits.isValid())
         crossingSimHitIndexOffset_[tag.encode()] += simHits->size();
     }
@@ -264,6 +275,9 @@ namespace cms {
     }
     _pixeldigialgo->calculateInstlumiFactor(PileupInfo_.get());
 
+
+
+
     if (_pixeldigialgo->killBadFEDChannels()) {
       std::unique_ptr<PixelFEDChannelCollection> PixelFEDChannelCollection_ =
           _pixeldigialgo->chooseScenario(PileupInfo_.get(), randomEngine_);
@@ -279,17 +293,102 @@ namespace cms {
 
         edm::DetSet<PixelDigi> collector(iu->geographicalId().rawId());
         edm::DetSet<PixelDigiSimLink> linkcollector(iu->geographicalId().rawId());
+//        edm::DetSet<PixelDigiAddTempInfo> tempcollector(iu->geographicalId().rawId());
+        std::vector<PixelDigiAddTempInfo> tempcollector;
 
         _pixeldigialgo->digitize(
-            dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data, tTopo, randomEngine_);
+            dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data,
+//                        tempcollector.data, tTopo, randomEngine_);
+                        tempcollector, tTopo, randomEngine_);
         if (!collector.data.empty()) {
           theDigiVector.push_back(std::move(collector));
         }
         if (!linkcollector.data.empty()) {
           theDigiLinkVector.push_back(std::move(linkcollector));
         }
+//        if (!tempcollector.data.empty()) {
+        if (tempcollector.size()>0) {
+          std::cout << " Caro : New class is not empty " << tempcollector.size() << std::endl;
+
+          std::cout << "  ------------------------------------------ " << std::endl;
+          std::vector<PixelDigiAddTempInfo>::const_iterator loopNewClass;
+          unsigned int channelPrevious=-1;
+          unsigned int channel2Previous=-1;
+          unsigned int channel3Previous=-1;
+          int allDigi=0;
+          for (loopNewClass = tempcollector.begin(); loopNewClass != tempcollector.end(); ++loopNewClass)  {  // ITERATOR OVER DET IDs
+              if (channelPrevious==loopNewClass->channel()) {
+                std::cout << " digi " << loopNewClass->channel()  << " appears more than once in the list " << std::endl;
+                Val1Digi2Simhit++;               
+                if (channel2Previous==loopNewClass->channel()) {
+                    Val1Digi3Simhit++;
+                    if (channel3Previous==loopNewClass->channel()) Val1Digi4Simhit++;
+                }
+              }
+              else Val1Digi1Simhit++;
+
+              channel3Previous=channel2Previous;
+              channel2Previous=channelPrevious;
+              channelPrevious=loopNewClass->channel();
+              allDigi++;
+          }
+          if (allDigi!= (int) tempcollector.size()) std::cout << " !!!!!!!  problem : not looping on all the digi of the new class" << std::endl;
+  
+          std::cout << "  Val1Digi1Simhit ... "  <<  Val1Digi1Simhit << "  " << Val1Digi2Simhit << " " << Val1Digi3Simhit << " " << Val1Digi4Simhit << std::endl;
+
+          // print Duplication results 
+          // Val1Digi1Simhit = number of different digis
+          // Val1Digi2Simhit = number of digis appearing more than 1
+          // Val1Digi3Simhit = number of digis appearing more than 2
+          // Val1Digi4Simhit = number of digis appearing more than 3
+          int ValExactly1Simhit = Val1Digi1Simhit - Val1Digi2Simhit;
+          int ValExactly2Simhit = Val1Digi2Simhit - Val1Digi3Simhit;
+          int ValExactly3Simhit = Val1Digi3Simhit - Val1Digi4Simhit;
+          //int check_the_sum = ValExactly1Simhit + 2* ValExactly2Simhit + 3* ValExactly3Simhit;
+          //if (check_the_sum!=allDigi) std::cout << " !!!!!!!!! problem in decoding the number of digi in multiple apparition " 
+          //                                          << check_the_sum << "  != " << allDigi << std::endl;
+          std::cout <<  "   RESULTS : Fraction of unique digi-simhit association " << 1.*ValExactly1Simhit/(1.*Val1Digi1Simhit) 
+                    << " over " << Val1Digi1Simhit << " digis "<< std::endl; 
+          std::cout <<  "   RESULTS : Fraction of double digi-simhit association " << 1.*ValExactly2Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+          if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of triple  digi-simhit association " << 1.*ValExactly3Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+          if (Val1Digi4Simhit>0)   std::cout <<  "   RESULTS : Fraction of >3 digi-simhit association " << 1.*Val1Digi4Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+    
+          std::cout << "  ------------------------------------------ " << std::endl;
+        }
       }
     }
+
+
+// Test for duplication of digi 
+
+/*
+    // std::cout << "  ------------------------------------------ " << std::endl;
+    int listDigiSize = theDigiVector.size();
+    // std::cout << "  Digi : " << theDigiVector.size()  << std::endl;
+
+    int doubleDigi=0;
+    int allDigi=0;
+    edm::DetSetVector<PixelDigi>::const_iterator digiIter;
+    for (digiIter = theDigiVector.begin(); digiIter != theDigiVector.end(); ++digiIter)  {  // ITERATOR OVER DET IDs
+       uint32_t detid = digiIter->id;
+       int channelPrevious=-1;
+       // std::cout << "  detid  "  << detid  << std::endl;
+       edm::DetSet<PixelDigi>::const_iterator ipix;  // ITERATOR OVER DIGI DATA
+       for (ipix = digiIter->data.begin(); ipix != digiIter->end(); ++ipix) {
+          //std::cout << ipix->row()  << "    "  << ipix->column()  << "    "  <<  ipix->adc() << std::endl;
+          if (channelPrevious==ipix->channel()) {
+              std::cout << " detid " << detid << "    " <<  ipix->row()  << "    "  << ipix->column()  << " appears twice in the list " << std::endl;
+              doubleDigi++;
+          }
+          channelPrevious=ipix->channel();
+          allDigi++;
+       }
+    }
+    std::cout <<  doubleDigi << " double apparitions in the digi list over " << allDigi << " digis (among " << listDigiSize << " different detIDs)" << std::endl;
+    // std::cout << "  ------------------------------------------ " << std::endl;
+*/
+
+// end of Test
 
     // Step C: create collection with the cache vector of DetSet
     std::unique_ptr<edm::DetSetVector<PixelDigi> > output(new edm::DetSetVector<PixelDigi>(theDigiVector));

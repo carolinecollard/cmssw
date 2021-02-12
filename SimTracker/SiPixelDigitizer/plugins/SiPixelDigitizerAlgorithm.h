@@ -20,6 +20,7 @@
 #include "DataFormats/SiPixelDetId/interface/PixelFEDChannel.h"
 #include "CalibTracker/Records/interface/SiPixelFEDChannelContainerESProducerRcd.h"
 #include "boost/multi_array.hpp"
+#include "SimTracker/SiPixelDigitizer/plugins/PixelDigiAddTempInfo.h"
 
 typedef boost::multi_array<float, 2> array_2d;
 
@@ -74,6 +75,7 @@ public:
   void digitize(const PixelGeomDetUnit* pixdet,
                 std::vector<PixelDigi>& digis,
                 std::vector<PixelDigiSimLink>& simlinks,
+                std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
                 const TrackerTopology* tTopo,
                 CLHEP::HepRandomEngine*);
   void calculateInstlumiFactor(PileupMixingContent* puInfo);
@@ -301,10 +303,17 @@ private:
   typedef std::vector<edm::ParameterSet> Parameters;
   typedef boost::multi_array<float, 2> array_2d;
 
+  typedef std::pair<unsigned int, unsigned int> subDetTofBin;
+  typedef std::map<unsigned int, std::vector<PSimHit> > simhit_map;
+  simhit_map SimHitMap;
+  typedef std::map<subDetTofBin, unsigned int> simhit_collectionMap;
+  simhit_collectionMap SimHitCollMap;
+
   // Contains the accumulated hit info.
   signalMaps _signal;
 
   const bool makeDigiSimLinks_;
+  const bool store_SimHitEntryExitPoints_;
 
   const bool use_ineff_from_db_;
   const bool use_module_killing_;   // remove or not the dead pixel modules
@@ -435,6 +444,7 @@ private:
                   const PixelGeomDetUnit* pixdet,
                   std::vector<PixelDigi>& digis,
                   std::vector<PixelDigiSimLink>& simlinks,
+                  std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
                   const TrackerTopology* tTopo) const;
   void pixel_inefficiency(const PixelEfficiencies& eff,
                           const PixelGeomDetUnit* pixdet,
