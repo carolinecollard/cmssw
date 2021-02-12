@@ -141,7 +141,7 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
 
 
 
-  std::cout << "       hitIndex in ChargeRew  " << hitIndex << std::endl;
+  std::cout << "       hitIndex in ChargeRew  " << hitIndex <<  " " << hit.energyLoss() << "  " << hit.entryPoint() << " " << hit.exitPoint() << std::endl;
 
   for (std::map<int, float, std::less<int> >::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
     int chan = (*im).first;

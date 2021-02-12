@@ -794,7 +794,9 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
 
   uint32_t detId = pixdet->geographicalId().rawId();
   size_t simHitGlobalIndex = inputBeginGlobalIndex;  // This needs to stored to create the digi-sim link later
+  std::cout << " in SiPixelDigitizerAlgorithm::accumulateSimHits detId = " << detId << " simHitGlobalIndex = " << simHitGlobalIndex << std::endl;
   for (std::vector<PSimHit>::const_iterator ssbegin = inputBegin; ssbegin != inputEnd; ++ssbegin, ++simHitGlobalIndex) {
+    // std::cout << "  loop on PSimHit in SiPixelDigitizerAlgorithm::accumulateSimHits simHitGlobalIndex = " << simHitGlobalIndex << std::endl;
     // skip hits not in this detector.
     if ((*ssbegin).detUnitId() != detId) {
       continue;
@@ -831,6 +833,7 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
                     collection_points);  // 1st 3 args needed only for SimHit<-->Digi link
     }                                    //  end if
   }                                      // end for
+   std::cout << " before leaving SiPixelDigitizerAlgorithm::accumulateSimHits detId = " << detId << " simHitGlobalIndex = " << simHitGlobalIndex << std::endl;
 }
 
 //============================================================================
@@ -1539,11 +1542,13 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
 
   if (UseReweighting) {
     if (hit.processType() == 0) {
+      std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a primary particle "<< std::endl;
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
             hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
  //         hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     } else {
       // If it's not the primary particle, use the first hit in the collection as SimHit, which should be the corresponding primary.
+      std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a  non primary particle "<< std::endl;
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
             (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
 //          (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
@@ -1562,14 +1567,41 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
 #endif
     }
   }
+/* Storing the SimHit map here does not work as the ordering the reading of SimHit is not the same as the one of the collection :(
+ * --> need a dedicated function : see SiPixelDigitizerAlgorithm::fillSimHitMaps
   // store here the SimHit map for later
   subDetTofBin theSubDetTofBin = std::make_pair(DetId(detID).subdetId(), tofBin);
   SimHitMap[SimHitCollMap[theSubDetTofBin]].push_back(hit);
   std::cout << " in induce_signal : filling the SimHitMap map "<<  SimHitCollMap[theSubDetTofBin] << " = (" << DetId(detID).subdetId() <<   ", " << tofBin << ")   hitIndex  " << hitIndex << std::endl;
-  
+  */
 
 }  // end induce_signal
 
+/***********************************************************************/
+
+
+
+void SiPixelDigitizerAlgorithm::fillSimHitMaps(std::vector<PSimHit> simHits, 
+					       const unsigned int tofBin)
+{
+  // store here the SimHit map for later
+  //
+  int printnum=0;
+  for (std::vector<PSimHit>::const_iterator it = simHits.begin(), itEnd = simHits.end(); it != itEnd;
+           ++it, ++printnum) {
+      unsigned int detID = (*it).detUnitId();
+      unsigned int subdetID= DetId(detID).subdetId();
+      subDetTofBin theSubDetTofBin = std::make_pair(subdetID, tofBin);
+      SimHitMap[SimHitCollMap[theSubDetTofBin]].push_back(*it);
+
+      std::cout <<  " loop hit " << printnum << " "  << (*it).detUnitId() << " Eloss  " << (*it).energyLoss() 
+                << " Points " << (*it).entryPoint() << " " << (*it).exitPoint() << std::endl;
+
+      if (printnum==1) std::cout << " in SiPixelDigitizerAlgorithm::fillSimHitMaps : filling the SimHitMap map "<<  SimHitCollMap[theSubDetTofBin] << " = (" 
+                     << subdetID <<   ", " << tofBin << ") with  simHits.size= " << simHits.size(); 
+  }
+  std::cout << " for a SimHitMap.size of " << SimHitMap.size()  << std::endl;
+}
 /***********************************************************************/
 
 // Build pixels, check threshold, add misscalibration, ...
@@ -1677,12 +1709,21 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
            auto it = SimHitCollMap.find(theSubDetTofBin);
            if (it != SimHitCollMap.end()) {
             auto it2 = SimHitMap.find((it->second));
+
+            /*
+            std::vector<PSimHit> const& MyVecOfsimHits = it2->second;
+            unsigned int toto=0;
+            for (std::vector<PSimHit>::const_iterator it3 = MyVecOfsimHits.begin(), it3End = MyVecOfsimHits.end(); it3 != it3End; ++it3, ++toto) {
+               std::cout << "              it3 "  << toto << " DetId = " << (*it3).detUnitId() << " Eloss = "  << (*it3).energyLoss() << " Entry " << (*it3).entryPoint() << " Exit " << (*it3).exitPoint() << std::endl;
+            }
+            */
+
             if (it2 != SimHitMap.end()) {
               const PSimHit& theSimHit = (it2->second)[currentCFPos];
               newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
               std::cout << "for digi " << chan << " with " << adc << " adc in " << (uint32_t) detID 
-                      << " : SimHit found in (" << DetId(detID).subdetId() << ", "  <<  tofBin <<") " 
-                      << info.hitIndex() << "  "  << theSimHit.energyLoss() << "  " << theSimHit.entryPoint() << " " << theSimHit.exitPoint() << std::endl;
+                      << " : SimHit number "  << info.hitIndex() << "found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
+                      << " Eloss = "  << theSimHit.energyLoss() << " Entry " << theSimHit.entryPoint() << " Exit " << theSimHit.exitPoint() << std::endl;
             }
            }
         }

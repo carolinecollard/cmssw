@@ -134,6 +134,10 @@ namespace cms {
       edm::ESHandle<TrackerTopology> tTopoHand;
       iSetup.get<TrackerTopologyRcd>().get(tTopoHand);
       const TrackerTopology* tTopo = tTopoHand.product();
+
+
+      _pixeldigialgo->fillSimHitMaps(simHits, tofBin);
+
       for (std::vector<PSimHit>::const_iterator it = simHits.begin(), itEnd = simHits.end(); it != itEnd;
            ++it, ++globalSimHitIndex) {
         unsigned int detId = (*it).detUnitId();
@@ -153,6 +157,8 @@ namespace cms {
             GlobalVector bfield = pSetup->inTesla(pixdet->surface().position());
             LogDebug("PixelDigitizer ") << "B-field(T) at " << pixdet->surface().position()
                                         << "(cm): " << pSetup->inTesla(pixdet->surface().position());
+
+            std::cout << " in SiPixelDigitizer::accumulatePixelHits  globalSimHitIndex = "  << globalSimHitIndex << std::endl;
             _pixeldigialgo->accumulateSimHits(
                 it, itEnd, globalSimHitIndex, tofBin, pixdet, bfield, tTopo, randomEngine_);
           }
@@ -221,6 +227,7 @@ namespace cms {
       unsigned int tofBin = PixelDigiSimLink::LowTof;
       if ((*i).find(std::string("HighTof")) != std::string::npos)
         tofBin = PixelDigiSimLink::HighTof;
+             std::cout << "in SiPixelDigitizer::accumulate Event " << tag.encode() << " crossingSimHitIndexOffset_ " << crossingSimHitIndexOffset_[tag.encode()] << std::endl;
       accumulatePixelHits(simHits, crossingSimHitIndexOffset_[tag.encode()], tofBin, iSetup);
       // Now that the hits have been processed, I'll add the amount of hits in this crossing on to
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
@@ -246,6 +253,23 @@ namespace cms {
       unsigned int tofBin = PixelDigiSimLink::LowTof;
       if ((*i).find(std::string("HighTof")) != std::string::npos)
         tofBin = PixelDigiSimLink::HighTof;
+             std::cout << "in SiPixelDigitizer::accumulate PileUpEventPrincipal " << tag.encode() << " crossingSimHitIndexOffset_ " << crossingSimHitIndexOffset_[tag.encode()] << std::endl;
+
+      // test Caro
+      if (simHits.isValid()) {
+        std::vector<PSimHit> const& ZesimHits = *simHits.product();
+        int printnum=0;
+        for (std::vector<PSimHit>::const_iterator it = ZesimHits.begin(), itEnd = ZesimHits.end(); it != itEnd;
+           ++it, ++printnum) {
+                unsigned int detId = (*it).detUnitId();
+                std::cout <<  " loop hit " << printnum << " "  << detId << " Eloss  " << (*it).energyLoss() << " Points " << (*it).entryPoint() << " " << (*it).exitPoint() << std::endl;
+        }
+      }
+      // end test
+
+
+
+
       accumulatePixelHits(simHits, crossingSimHitIndexOffset_[tag.encode()], tofBin, iSetup);
       // Now that the hits have been processed, I'll add the amount of hits in this crossing on to
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
