@@ -802,6 +802,13 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
       continue;
     }
 
+
+   std::cout << " Caro Debug : quid du hit ? " << simHitGlobalIndex << std::endl;
+   std:: cout << (*ssbegin).particleType() << " " << (*ssbegin).pabs() << " "
+                                << (*ssbegin).energyLoss() << " " << (*ssbegin).tof() << " " << (*ssbegin).trackId()
+                                << " " << (*ssbegin).processType() << " " << (*ssbegin).detUnitId()
+                                << (*ssbegin).entryPoint() << " " << (*ssbegin).exitPoint() << std::endl;
+
 #ifdef TP_DEBUG
     LogDebug("Pixel Digitizer") << (*ssbegin).particleType() << " " << (*ssbegin).pabs() << " "
                                 << (*ssbegin).energyLoss() << " " << (*ssbegin).tof() << " " << (*ssbegin).trackId()
@@ -1518,6 +1525,7 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
           chan = PixelDigi::pixelToChannel(ix, iy);  // Get index
           // Load the amplitude
           hit_signal[chan] += ChargeFraction;
+          std::cout << "        --> chan " << chan << " ChargeFraction  " << ChargeFraction << " hit_signal[chan] "  << hit_signal[chan] << std::endl;
         }  // endif
 
 #ifdef TP_DEBUG
@@ -1601,6 +1609,11 @@ void SiPixelDigitizerAlgorithm::fillSimHitMaps(std::vector<PSimHit> simHits,
                      << subdetID <<   ", " << tofBin << ") with  simHits.size= " << simHits.size(); 
   }
   std::cout << " for a SimHitMap.size of " << SimHitMap.size()  << std::endl;
+}
+
+void SiPixelDigitizerAlgorithm::ResetSimHitMaps(){
+  SimHitMap.clear();
+  std::cout << " clear SimHitMap  --- size " << SimHitMap.size()  << std::endl;
 }
 /***********************************************************************/
 
@@ -1720,7 +1733,8 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
 
             if (it2 != SimHitMap.end()) {
               const PSimHit& theSimHit = (it2->second)[currentCFPos];
-              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
+//              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
+              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId());
               std::cout << "for digi " << chan << " with " << adc << " adc in " << (uint32_t) detID 
                       << " : SimHit number "  << info.hitIndex() << "found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
                       << " Eloss = "  << theSimHit.energyLoss() << " Entry " << theSimHit.entryPoint() << " Exit " << theSimHit.exitPoint() << std::endl;

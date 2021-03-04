@@ -116,9 +116,67 @@ namespace cms {
     _pixeldigialgo = std::make_unique<SiPixelDigitizerAlgorithm>(iConfig);
     if (NumberOfEndcapDisks != 2)
       producesCollector.produces<PixelFEDChannelCollection>();
+
+
+    // init of counters
+    Val1Digi1Simhit=0;
+    Val1Digi2Simhit=0;
+    Val1Digi3Simhit=0;
+    Val1Digi4Simhit=0;
+
+    NPrim1SimHit=0;
+    NPrim2SimHit=0;
+    NPrim2SimHit10=0;
+    NPrim1if2SimHit=0;
+    NStd2SimHit=0;
+    NStd3SimHit=0;
+    NStd4SimHit=0;
+    NnoStd2SimHit=0;
+    NnoStd3SimHit=0;
+    NnoStd4SimHit=0;
+
+
   }
 
-  SiPixelDigitizer::~SiPixelDigitizer() { edm::LogInfo("PixelDigitizer ") << "Destruct the Pixel Digitizer"; }
+  SiPixelDigitizer::~SiPixelDigitizer() { 
+
+     edm::LogInfo("PixelDigitizer ") << "Destruct the Pixel Digitizer"; 
+          std::cout << "  ------------------------------------------ " << std::endl;
+          std::cout << " Summary of Investigations in PixelDigitizer " << std::endl;
+
+          std::cout << "  Val1Digi1Simhit ... "  <<  Val1Digi1Simhit << "  " << Val1Digi2Simhit << " " << Val1Digi3Simhit << " " << Val1Digi4Simhit << std::endl;
+
+
+          // print Duplication results 
+          // Val1Digi1Simhit = number of different digis
+          // Val1Digi2Simhit = number of digis appearing more than 1
+          // Val1Digi3Simhit = number of digis appearing more than 2
+          // Val1Digi4Simhit = number of digis appearing more than 3
+          int ValExactly1Simhit = Val1Digi1Simhit - Val1Digi2Simhit;
+          int ValExactly2Simhit = Val1Digi2Simhit - Val1Digi3Simhit;
+          int ValExactly3Simhit = Val1Digi3Simhit - Val1Digi4Simhit;
+          //int check_the_sum = ValExactly1Simhit + 2* ValExactly2Simhit + 3* ValExactly3Simhit;
+          //if (check_the_sum!=allDigi) std::cout << " !!!!!!!!! problem in decoding the number of digi in multiple apparition " 
+          //                                          << check_the_sum << "  != " << allDigi << std::endl;
+          std::cout <<  "   RESULTS : Fraction of unique digi-simhit association " << 1.*ValExactly1Simhit/(1.*Val1Digi1Simhit) 
+                    << " over " << Val1Digi1Simhit << " digis "<< std::endl; 
+          std::cout <<  "   RESULTS : Fraction of double digi-simhit association " << 1.*ValExactly2Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+          if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of triple  digi-simhit association " << 1.*ValExactly3Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+          if (Val1Digi4Simhit>0)   std::cout <<  "   RESULTS : Fraction of >3 digi-simhit association " << 1.*Val1Digi4Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+
+
+           // decode extra checks
+           //
+           std::cout << "   RESULTS : Fraction of Primary for 1st hit " << 1.*NPrim1SimHit/(1.*Val1Digi1Simhit) << std::endl;
+           std::cout << "   RESULTS : Fraction of Primary for 1st hit if 2 SimHits " << 1.*NPrim1if2SimHit/(1.*NStd2SimHit+1.*NnoStd2SimHit) << std::endl;
+           std::cout << "   RESULTS : Fraction of Primary for 2nd hit " << 1.*NPrim2SimHit/(1.*NStd2SimHit+1.*NnoStd2SimHit) << std::endl;
+           std::cout << "   RESULTS : Fraction of Primary for 2nd hit with 1st Primary too " << 1.*NPrim2SimHit10/(1.*NStd2SimHit+1.*NnoStd2SimHit) << std::endl;
+           std::cout << "   RESULTS : Fraction of same trackID for 2 SimHits " << 1.*NStd2SimHit/(1.*NStd2SimHit+1.*NnoStd2SimHit) << std::endl;
+           if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of same trackID for 3 SimHits " << 1.*NStd3SimHit/(1.*NStd3SimHit+1.*NnoStd3SimHit) << std::endl;
+           if (Val1Digi4Simhit>0) std::cout <<  "   RESULTS : Fraction of same trackID for >=4 SimHits " << 1.*NStd4SimHit/(1.*NStd4SimHit+1.*NnoStd4SimHit) << std::endl;
+    
+          std::cout << "  ------------------------------------------ " << std::endl;
+  }
 
   //
   // member functions
@@ -174,10 +232,20 @@ namespace cms {
     }
 
     std::cout << " SiPixelDigitizer initializeEvent " << std::endl;
+/*
     Val1Digi1Simhit=0;
     Val1Digi2Simhit=0;
     Val1Digi3Simhit=0;
     Val1Digi4Simhit=0;
+
+    NPrim1SimHit=0;
+    NStd2SimHit=0;
+    NStd3SimHit=0;
+    NStd4SimHit=0;
+    NnoStd2SimHit=0;
+    NnoStd3SimHit=0;
+    NnoStd4SimHit=0;
+*/
 
     // Make sure that the first crossing processed starts indexing the sim hits from zero.
     // This variable is used so that the sim hits from all crossing frames have sequential
@@ -339,17 +407,43 @@ namespace cms {
           unsigned int channelPrevious=-1;
           unsigned int channel2Previous=-1;
           unsigned int channel3Previous=-1;
+          int trackIdFirstOne=-1;
+          int processTFirstOne=-1;
+          int nLoopChan=0;
           int allDigi=0;
           for (loopNewClass = tempcollector.begin(); loopNewClass != tempcollector.end(); ++loopNewClass)  {  // ITERATOR OVER DET IDs
               if (channelPrevious==loopNewClass->channel()) {
-                std::cout << " digi " << loopNewClass->channel()  << " appears more than once in the list " << std::endl;
                 Val1Digi2Simhit++;               
                 if (channel2Previous==loopNewClass->channel()) {
                     Val1Digi3Simhit++;
-                    if (channel3Previous==loopNewClass->channel()) Val1Digi4Simhit++;
+                    if (channel3Previous==loopNewClass->channel())  {
+                        Val1Digi4Simhit++;
+                    }
                 }
+                if (trackIdFirstOne==loopNewClass->trackID()) { 
+                     if (nLoopChan==1) NStd2SimHit++; 
+                     if (nLoopChan==2) NStd3SimHit++; 
+                     else NStd4SimHit++; 
+                }
+                else {
+                     if (nLoopChan==1) NnoStd2SimHit++; 
+                     if (nLoopChan==2) NnoStd3SimHit++; 
+                     else NnoStd4SimHit++; 
+                }
+                if (nLoopChan==1 && processTFirstOne==0) NPrim1if2SimHit++;
+                if (nLoopChan==1 && loopNewClass->processType()==0) NPrim2SimHit++;
+                if (nLoopChan==1 && loopNewClass->processType()==0 && processTFirstOne==0) NPrim2SimHit10++;
+                nLoopChan++;
+                std::cout << " digi " << loopNewClass->channel()  << " appears more than once in the list (" << nLoopChan << "x)" << std::endl;
               }
-              else Val1Digi1Simhit++;
+              else {
+                 Val1Digi1Simhit++;
+                 // extra info used for checks
+                 if (loopNewClass->processType() == 0) NPrim1SimHit++;
+                 trackIdFirstOne=loopNewClass->trackID();
+                 processTFirstOne=loopNewClass->processType();
+                 nLoopChan=1;
+              }
 
               channel3Previous=channel2Previous;
               channel2Previous=channelPrevious;
@@ -358,7 +452,9 @@ namespace cms {
           }
           if (allDigi!= (int) tempcollector.size()) std::cout << " !!!!!!!  problem : not looping on all the digi of the new class" << std::endl;
   
+/*
           std::cout << "  Val1Digi1Simhit ... "  <<  Val1Digi1Simhit << "  " << Val1Digi2Simhit << " " << Val1Digi3Simhit << " " << Val1Digi4Simhit << std::endl;
+
 
           // print Duplication results 
           // Val1Digi1Simhit = number of different digis
@@ -376,11 +472,21 @@ namespace cms {
           std::cout <<  "   RESULTS : Fraction of double digi-simhit association " << 1.*ValExactly2Simhit/(1.*Val1Digi1Simhit)  << std::endl;
           if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of triple  digi-simhit association " << 1.*ValExactly3Simhit/(1.*Val1Digi1Simhit)  << std::endl;
           if (Val1Digi4Simhit>0)   std::cout <<  "   RESULTS : Fraction of >3 digi-simhit association " << 1.*Val1Digi4Simhit/(1.*Val1Digi1Simhit)  << std::endl;
+
+
+           // decode extra checks
+           //
+           std::cout << "   RESULTS : Fraction of Primary for 1st hit " << 1.*NPrim1SimHit/(1.*Val1Digi1Simhit) << std::endl;
+           std::cout << "   RESULTS : Fraction of same trackID for 2 SimHits " << 1.*NStd2SimHit/(1.*NStd2SimHit+1.*NnoStd2SimHit) << std::endl;
+           if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of same trackID for 3 SimHits " << 1.*NStd3SimHit/(1.*NStd3SimHit+1.*NnoStd3SimHit) << std::endl;
+           if (Val1Digi4Simhit>0) std::cout <<  "   RESULTS : Fraction of same trackID for >=4 SimHits " << 1.*NStd4SimHit/(1.*NStd4SimHit+1.*NnoStd4SimHit) << std::endl;
     
           std::cout << "  ------------------------------------------ " << std::endl;
+*/
         }
       }
     }
+    _pixeldigialgo->ResetSimHitMaps();
 
 
 // Test for duplication of digi 

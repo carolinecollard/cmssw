@@ -108,6 +108,17 @@ namespace cms {
     int Val1Digi3Simhit;
     int Val1Digi4Simhit;
 
+    int NPrim1SimHit;
+    int NPrim2SimHit;
+    int NPrim2SimHit10;
+    int NPrim1if2SimHit;
+    int NStd2SimHit;
+    int NStd3SimHit;
+    int NStd4SimHit;
+    int NnoStd2SimHit;
+    int NnoStd3SimHit;
+    int NnoStd4SimHit;
+
     // infrastructure to reject dead pixels as defined in db (added by F.Blekman)
   };
 }  // namespace cms

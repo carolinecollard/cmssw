@@ -81,6 +81,7 @@ public:
   void calculateInstlumiFactor(PileupMixingContent* puInfo);
   void fillSimHitMaps(std::vector<PSimHit> simHits,
                       const unsigned int tofBin);
+  void ResetSimHitMaps();
   void init_DynIneffDB(const edm::EventSetup&, const unsigned int&);
   std::unique_ptr<PixelFEDChannelCollection> chooseScenario(PileupMixingContent* puInfo, CLHEP::HepRandomEngine*);
 
