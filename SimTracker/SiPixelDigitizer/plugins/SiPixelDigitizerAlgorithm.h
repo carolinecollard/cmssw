@@ -107,14 +107,14 @@ public:
       }
     }
 
-    Amplitude(float amp, const PSimHit* hitp, size_t hitIndex, unsigned int tofBin, float frac)
+    Amplitude(float amp, const PSimHit* hitp, size_t hitIndex, size_t hitInd4CR, unsigned int tofBin, float frac )
         : _amp(amp), _frac(1, frac) {
       //in case of digi from noisypixels
       //the MC information are removed
       if (_frac[0] < -0.5) {
         _frac.pop_back();
       } else {
-        _hitInfos.emplace_back(hitp, hitIndex, tofBin);
+        _hitInfos.emplace_back(hitp, hitIndex, tofBin, hitInd4CR);
       }
     }
 
@@ -431,6 +431,7 @@ private:
                      std::vector<PSimHit>::const_iterator inputEnd,
                      const PSimHit& hit,
                      const size_t hitIndex,
+                     const size_t FistHitIndex,
                      const unsigned int tofBin,
                      const PixelGeomDetUnit* pixdet,
                      const std::vector<SignalPoint>& collection_points);

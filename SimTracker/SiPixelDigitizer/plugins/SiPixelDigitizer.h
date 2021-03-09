@@ -108,6 +108,8 @@ namespace cms {
     int Val1Digi3Simhit;
     int Val1Digi4Simhit;
 
+    int NduplHit;
+
     int NPrim1SimHit;
     int NPrim2SimHit;
     int NPrim2SimHit10;

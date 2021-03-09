@@ -124,6 +124,8 @@ namespace cms {
     Val1Digi3Simhit=0;
     Val1Digi4Simhit=0;
 
+    NduplHit=0;
+
     NPrim1SimHit=0;
     NPrim2SimHit=0;
     NPrim2SimHit10=0;
@@ -164,6 +166,8 @@ namespace cms {
           if (ValExactly3Simhit>0) std::cout <<  "   RESULTS : Fraction of triple  digi-simhit association " << 1.*ValExactly3Simhit/(1.*Val1Digi1Simhit)  << std::endl;
           if (Val1Digi4Simhit>0)   std::cout <<  "   RESULTS : Fraction of >3 digi-simhit association " << 1.*Val1Digi4Simhit/(1.*Val1Digi1Simhit)  << std::endl;
 
+
+          std::cout <<  "   For information : Duplication of hit " << NduplHit << std::endl;
 
            // decode extra checks
            //
@@ -400,19 +404,19 @@ namespace cms {
         }
 //        if (!tempcollector.data.empty()) {
         if (tempcollector.size()>0) {
-          std::cout << " Caro : New class is not empty " << tempcollector.size() << std::endl;
-
-          std::cout << "  ------------------------------------------ " << std::endl;
+//          std::cout << " Caro : New class is not empty " << tempcollector.size() << std::endl;
+//          std::cout << "  ------------------------------------------ " << std::endl;
           std::vector<PixelDigiAddTempInfo>::const_iterator loopNewClass;
           unsigned int channelPrevious=-1;
           unsigned int channel2Previous=-1;
           unsigned int channel3Previous=-1;
+          size_t hitFirstOne=-1;
           int trackIdFirstOne=-1;
           int processTFirstOne=-1;
           int nLoopChan=0;
           int allDigi=0;
           for (loopNewClass = tempcollector.begin(); loopNewClass != tempcollector.end(); ++loopNewClass)  {  // ITERATOR OVER DET IDs
-              if (channelPrevious==loopNewClass->channel()) {
+              if (channelPrevious==loopNewClass->channel() && hitFirstOne!=loopNewClass->hitIndex() ) {
                 Val1Digi2Simhit++;               
                 if (channel2Previous==loopNewClass->channel()) {
                     Val1Digi3Simhit++;
@@ -436,10 +440,14 @@ namespace cms {
                 nLoopChan++;
                 std::cout << " digi " << loopNewClass->channel()  << " appears more than once in the list (" << nLoopChan << "x)" << std::endl;
               }
+              else if (channelPrevious==loopNewClass->channel() && hitFirstOne==loopNewClass->hitIndex() ) {
+                   NduplHit++;
+              }
               else {
                  Val1Digi1Simhit++;
                  // extra info used for checks
                  if (loopNewClass->processType() == 0) NPrim1SimHit++;
+                 hitFirstOne= loopNewClass->hitIndex();
                  trackIdFirstOne=loopNewClass->trackID();
                  processTFirstOne=loopNewClass->processType();
                  nLoopChan=1;

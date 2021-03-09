@@ -835,6 +835,7 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
                     inputEnd,
                     *ssbegin,
                     simHitGlobalIndex,
+                    inputBeginGlobalIndex,
                     tofBin,
                     pixdet,
                     collection_points);  // 1st 3 args needed only for SimHit<-->Digi link
@@ -1365,6 +1366,7 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
                                               std::vector<PSimHit>::const_iterator inputEnd,
                                               const PSimHit& hit,
                                               const size_t hitIndex,
+                                              const size_t FistHitIndex,
                                               const unsigned int tofBin,
                                               const PixelGeomDetUnit* pixdet,
                                               const std::vector<SignalPoint>& collection_points) {
@@ -1552,13 +1554,13 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
     if (hit.processType() == 0) {
       std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a primary particle "<< std::endl;
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
-            hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
+            hit, hit_signal, hitIndex, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
  //         hit, hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     } else {
       // If it's not the primary particle, use the first hit in the collection as SimHit, which should be the corresponding primary.
       std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a  non primary particle "<< std::endl;
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
-            (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
+            (*inputBegin), hit_signal, hitIndex, FistHitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
 //          (*inputBegin), hit_signal, hitIndex, tofBin, topol, detID, theSignal, hit.processType(), makeDigiSimLinks_);
     }
   }
@@ -1566,7 +1568,10 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
     for (hit_map_type::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
       int chan = (*im).first;
 //      theSignal[chan] += (makeDigiSimLinks_ ? Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
-        theSignal[chan] += (makeDSLinks ? Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+        size_t hitI4CR = -1;
+        if (hit.processType() == 0) hitI4CR =hitIndex;
+        else hitI4CR = FistHitIndex;
+        theSignal[chan] += (makeDSLinks ? Amplitude((*im).second, &hit, hitIndex, hitI4CR, tofBin, (*im).second)
                                             : Amplitude((*im).second, (*im).second));
 
 #ifdef TP_DEBUG
@@ -1716,6 +1721,8 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
         
         for (const auto& info : (*i).second.hitInfos()) {
            unsigned int currentCFPos = info.hitIndex();
+           unsigned int CFPostoBeUsed = info.hitIndex4ChargeRew();
+           if (currentCFPos != CFPostoBeUsed)  std::cout << " when creating new class hitIndex4ChargeRew is different from hitIndex " << CFPostoBeUsed << "  " << currentCFPos <<std::endl;
            unsigned int tofBin = info.tofBin();
            // then inspired by https://github.com/cms-sw/cmssw/blob/master/SimTracker/TrackerHitAssociation/src/TrackerHitAssociator.cc#L566 :
            subDetTofBin theSubDetTofBin = std::make_pair(DetId(detID).subdetId(), tofBin); 
@@ -1732,11 +1739,14 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
             */
 
             if (it2 != SimHitMap.end()) {
-              const PSimHit& theSimHit = (it2->second)[currentCFPos];
+//              const PSimHit& theSimHit = (it2->second)[currentCFPos];
+              const PSimHit& theSimHit = (it2->second)[CFPostoBeUsed];
 //              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
-              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId());
+//              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId());
+              newClass_Digi_extra.emplace_back(chan, info.hitIndex4ChargeRew(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId());
               std::cout << "for digi " << chan << " with " << adc << " adc in " << (uint32_t) detID 
-                      << " : SimHit number "  << info.hitIndex() << "found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
+//                      << " : SimHit number "  << info.hitIndex() << "found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
+                      << " : SimHit number "  << info.hitIndex4ChargeRew() << "found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
                       << " Eloss = "  << theSimHit.energyLoss() << " Entry " << theSimHit.entryPoint() << " Exit " << theSimHit.exitPoint() << std::endl;
             }
            }

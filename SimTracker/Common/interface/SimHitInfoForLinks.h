@@ -11,8 +11,8 @@
 
 class SimHitInfoForLinks {
 public:
-  explicit SimHitInfoForLinks(PSimHit const *hitp, size_t hitindex, unsigned int tofbin)
-      : eventId_(hitp->eventId()), trackIds_(1, hitp->trackId()), hitIndex_(hitindex), tofBin_(tofbin) {}
+  explicit SimHitInfoForLinks(PSimHit const *hitp, size_t hitindex, unsigned int tofbin, size_t hitInd4CR)
+      : eventId_(hitp->eventId()), trackIds_(1, hitp->trackId()), hitIndex_(hitindex), tofBin_(tofbin), hitInd4CR_(hitInd4CR) {}
 
   const EncodedEventId &eventId() const { return eventId_; }
   const std::vector<unsigned int> &trackIds() const { return trackIds_; }
@@ -20,11 +20,13 @@ public:
   unsigned int trackId() const { return trackIds_[0]; }
   size_t hitIndex() const { return hitIndex_; }
   unsigned int tofBin() const { return tofBin_; }
+  size_t hitIndex4ChargeRew() const { return hitInd4CR_; }
 
 private:
   EncodedEventId eventId_;
   std::vector<unsigned int> trackIds_;
   size_t hitIndex_;
   unsigned int tofBin_;
+  size_t hitInd4CR_;
 };
 #endif

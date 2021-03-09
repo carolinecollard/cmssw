@@ -46,6 +46,7 @@ public:
   bool hitSignalReweight(const PSimHit& hit,
                          std::map<int, float, std::less<int> >& hit_signal,
                          const size_t hitIndex,
+                         const size_t hitIndex4CR,
                          const unsigned int tofBin,
                          const PixelTopology* topol,
                          uint32_t detID,

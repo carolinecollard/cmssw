@@ -123,6 +123,7 @@ SiPixelChargeReweightingAlgorithm::~SiPixelChargeReweightingAlgorithm() {
 bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
                                                           std::map<int, float, std::less<int> >& hit_signal,
                                                           const size_t hitIndex,
+                                                          const size_t hitIndex4CR,
                                                           const unsigned int tofBin,
                                                           const PixelTopology* topol,
                                                           uint32_t detID,
@@ -143,13 +144,16 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
 
   std::cout << "       hitIndex in ChargeRew  " << hitIndex <<  " " << hit.energyLoss() << "  " << hit.entryPoint() << " " << hit.exitPoint() << 
   " in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") " << std::endl;
+  if (hitIndex!=hitIndex4CR) std::cout << "         but hitIndex really used in CR = " << hitIndex4CR << std::endl;
+
 
   for (std::map<int, float, std::less<int> >::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
     int chan = (*im).first;
     std::pair<int, int> pixelWithCharge = PixelDigi::channelToPixel(chan);
 
     hitSignal[chan] +=
-        (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+//        (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, tofBin, (*im).second)
+        (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude((*im).second, &hit, hitIndex, hitIndex4CR, tofBin, (*im).second)
                               : SiPixelDigitizerAlgorithm::Amplitude((*im).second, (*im).second));
     chargeBefore += (*im).second;
 
@@ -325,7 +329,8 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
           (hitPixel.second + col - THY) >= 0 && (hitPixel.second + col - THY) < topol->ncolumns() && charge > 0) {
         chargeAfter += charge;
         theSignal[PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY)] +=
-            (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, tofBin, charge)
+//            (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, tofBin, charge)
+            (boolmakeDigiSimLinks ? SiPixelDigitizerAlgorithm::Amplitude(charge, &hit, hitIndex, hitIndex4CR, tofBin, charge)
                                   : SiPixelDigitizerAlgorithm::Amplitude(charge, charge));
 
         std::cout << "        --> reweighted chan " << PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY) << " amplitude " << charge << std::endl;
