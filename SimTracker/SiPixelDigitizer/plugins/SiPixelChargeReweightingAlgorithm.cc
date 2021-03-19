@@ -142,9 +142,8 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
 
 
 
-  std::cout << "       hitIndex in ChargeRew  " << hitIndex <<  " " << hit.energyLoss() << "  " << hit.entryPoint() << " " << hit.exitPoint() << 
+  std::cout << "       hitIndex in ChargeRew  " << hitIndex4CR <<  " " << hit.energyLoss() << "  " << hit.entryPoint() << " " << hit.exitPoint() << 
   " in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") " << std::endl;
-  if (hitIndex!=hitIndex4CR) std::cout << "         but hitIndex really used in CR = " << hitIndex4CR << std::endl;
 
 
   for (std::map<int, float, std::less<int> >::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
@@ -250,8 +249,10 @@ bool SiPixelChargeReweightingAlgorithm::hitSignalReweight(const PSimHit& hit,
   if (!(irow_min <= hitrow_max && irow_max >= hitrow_min && icol_min <= hitcol_max && icol_max >= hitcol_min)) {
     // The clusters do not have an overlap, hence the hit is NOT reweighted
      std::cout << " clus not reweight as no overlap, " 
-                              << "row min: " << irow_min << " col min: " << icol_min 
-                              << "row max: " << irow_max << " col min: " << icol_max << std::endl;
+                              << "row min: " << irow_min << "<= hitrow_max: " << hitrow_max 
+                              << ", row max: " << irow_max << ">= hitrow_min: "<< hitrow_min
+                              << ", col min: " << icol_min << "<= hitcol_max: "<< hitcol_max 
+                              << ", col max: " << icol_max << ">= hitcol_min: "<< hitcol_min <<std::endl;
     return false;
   }
 

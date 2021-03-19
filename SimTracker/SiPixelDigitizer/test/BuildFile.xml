@@ -19,3 +19,6 @@
 <library file="PixelSimHitsTest.cc" name="PixelSimHitsTest">
   <flags EDM_PLUGIN="1"/>
 </library>
+<library file="checkAddInfo.cc" name="checkAddInfo">
+  <flags EDM_PLUGIN="1"/>
+</library>

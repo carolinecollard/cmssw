@@ -6,13 +6,14 @@
 class PixelDigiAddTempInfo {
 public:
   PixelDigiAddTempInfo(
-      unsigned int ch, size_t Hindex, Local3DPoint entryP , Local3DPoint exitP, int PType, int PartID) {
+      unsigned int ch, size_t Hindex, Local3DPoint entryP , Local3DPoint exitP, int PType, int PartID, uint32_t detID) {
     chan = ch;
     index = Hindex;
     TheEntryPoint = entryP;
     TheExitPoint = exitP;
     TheProcessType = PType;
     ThePartID = PartID;
+    detectorID = detID;
   };
   PixelDigiAddTempInfo() {
     chan = 0;
@@ -29,8 +30,12 @@ public:
   Local3DPoint exitPoint() const { return TheExitPoint; }
   int processType() const { return TheProcessType; };
   int trackID() const { return ThePartID; };
+  uint32_t detID() const { return detectorID; };
 
   inline bool operator<(const PixelDigiAddTempInfo& other) const { return channel() < other.channel(); }
+
+//  bool check_in_list(unsigned int ch, size_t Hindex) {
+//       if (ch==chan && Hindex==index) { return true; } else { return false; } }
 
 private:
   unsigned int chan;
@@ -39,6 +44,7 @@ private:
   Local3DPoint TheExitPoint;
   int TheProcessType;
   int ThePartID;
+  uint32_t detectorID;
 };
 #endif
 

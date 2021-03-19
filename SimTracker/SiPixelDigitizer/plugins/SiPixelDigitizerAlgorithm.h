@@ -62,6 +62,9 @@ public:
   void init(const edm::EventSetup& es);
 
   void initializeEvent() { _signal.clear(); }
+//  void initializeEvent() { _signal.clear(); 
+//    debugDigiInfo.clear(); }
+//  std::vector<PixelDigiAddTempInfo> debugDigiInfo;
 
   //run the algorithm to digitize a single det
   void accumulateSimHits(const std::vector<PSimHit>::const_iterator inputBegin,
@@ -84,6 +87,7 @@ public:
   void ResetSimHitMaps();
   void init_DynIneffDB(const edm::EventSetup&, const unsigned int&);
   std::unique_ptr<PixelFEDChannelCollection> chooseScenario(PileupMixingContent* puInfo, CLHEP::HepRandomEngine*);
+
 
   // for premixing
   void calculateInstlumiFactor(const std::vector<PileupSummaryInfo>& ps,
@@ -312,6 +316,7 @@ private:
   typedef std::map<subDetTofBin, unsigned int> simhit_collectionMap;
   simhit_collectionMap SimHitCollMap;
 
+
   // Contains the accumulated hit info.
   signalMaps _signal;
 
@@ -326,6 +331,8 @@ private:
   const Parameters DeadModules;
 
   std::unique_ptr<SiPixelChargeReweightingAlgorithm> TheNewSiPixelChargeReweightingAlgorithmClass;
+
+//  std::vector<PixelDigiAddTempInfo> debugDigiInfo;
 
 private:
   // Variables
