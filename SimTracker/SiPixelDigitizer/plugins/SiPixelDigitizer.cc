@@ -232,7 +232,7 @@ namespace cms {
       firstInitializeEvent_ = false;
     }
 
-    std::cout << " SiPixelDigitizer initializeEvent " << std::endl;
+   // std::cout << " SiPixelDigitizer initializeEvent " << std::endl;
 
     // Make sure that the first crossing processed starts indexing the sim hits from zero.
     // This variable is used so that the sim hits from all crossing frames have sequential
@@ -282,15 +282,19 @@ namespace cms {
       unsigned int tofBin = PixelDigiSimLink::LowTof;
       if ((*i).find(std::string("HighTof")) != std::string::npos)
         tofBin = PixelDigiSimLink::HighTof;
+/*
              std::cout << "in SiPixelDigitizer::accumulate Event " << tag.encode() << " crossingSimHitIndexOffset_ " << crossingSimHitIndexOffset_[tag.encode()] << std::endl;
+*/
       accumulatePixelHits(simHits, crossingSimHitIndexOffset_[tag.encode()], tofBin, iSetup);
       // Now that the hits have been processed, I'll add the amount of hits in this crossing on to
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
+/*
              std::cout << "in SiPixelDigitizer::accumulate Event " << tag.encode() << std::endl;
              std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() 
                        << "-> total " << crossingSimHitIndexOffset_[tag.encode()]+simHits->size()  << std::endl;
+*/
       if (simHits.isValid())
         crossingSimHitIndexOffset_[tag.encode()] += simHits->size();
     }
@@ -308,8 +312,11 @@ namespace cms {
       unsigned int tofBin = PixelDigiSimLink::LowTof;
       if ((*i).find(std::string("HighTof")) != std::string::npos)
         tofBin = PixelDigiSimLink::HighTof;
+/*
              std::cout << "in SiPixelDigitizer::accumulate PileUpEventPrincipal " << tag.encode() << " crossingSimHitIndexOffset_ " << crossingSimHitIndexOffset_[tag.encode()] << std::endl;
+*/
 
+/*
       // test Caro
       if (simHits.isValid()) {
         std::vector<PSimHit> const& ZesimHits = *simHits.product();
@@ -321,6 +328,7 @@ namespace cms {
         }
       }
       // end test
+*/
 
 
 
@@ -330,9 +338,11 @@ namespace cms {
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
+/*
              std::cout << "in SiPixelDigitizer::accumulate PileUpEventPrincipal "  << iEvent.bunchCrossing() << "  " << tag.encode() << std::endl;
              std::cout << "index offset, current hit count = " << crossingSimHitIndexOffset_[tag.encode()] << ", " << simHits->size() 
                        << "-> total " << crossingSimHitIndexOffset_[tag.encode()]+simHits->size()  << std::endl;
+*/
       if (simHits.isValid())
         crossingSimHitIndexOffset_[tag.encode()] += simHits->size();
     }
@@ -397,7 +407,9 @@ namespace cms {
           for (loopNewClass = tempcollector.begin(); loopNewClass != tempcollector.end(); ++loopNewClass)  {  // ITERATOR OVER DET IDs
               if (channelPrevious==loopNewClass->channel() && hitFirstOne!=loopNewClass->hitIndex() ) {
                 Val1Digi2Simhit++;               
+/*
                 std::cout << " --->  Remaining multiple association for channel " << channelPrevious << " : " << hitFirstOne << "  "  << loopNewClass->hitIndex() << std::endl;
+*/
                 if (nLoopChan==2) Val1Digi3Simhit++; 
                 else if (nLoopChan==3) Val1Digi4Simhit++; 
 

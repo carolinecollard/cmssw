@@ -175,26 +175,32 @@ void SiPixelDigitizerAlgorithm::init(const edm::EventSetup& es) {
     }
   }
 
+/*
   std::cout << " Caro Test store_SimHitEntryExitPoints_ " << store_SimHitEntryExitPoints_ << std::endl;
+*/
 
   TheNewSiPixelChargeReweightingAlgorithmClass->init(es);
 
   int collectionIndex=0; // I don't find what are the different collections here
   int tofBin=0;
+/*
   std::cout << " init of the SimHitCollMap " << std::endl;
+*/
   for (int i1=1; i1<3; i1++) {
      for (int i2=0; i2<2; i2++) {
         if (i2==0) {
           tofBin = PixelDigiSimLink::LowTof;
-          std::cout << " PixelDigiSimLink::LowTof " << tofBin << std::endl;
+          // std::cout << " PixelDigiSimLink::LowTof " << tofBin << std::endl;
         }
         else  {
           tofBin = PixelDigiSimLink::HighTof;
-          std::cout << " PixelDigiSimLink::HighTof " << tofBin << std::endl;
+          // std::cout << " PixelDigiSimLink::HighTof " << tofBin << std::endl;
         }
         subDetTofBin theSubDetTofBin = std::make_pair(i1, tofBin);
         SimHitCollMap[theSubDetTofBin] = collectionIndex;
+/*
         std::cout << " collection " <<  collectionIndex << " for  ( " << i1 << ",  " << i2 << ") " << std::endl;
+*/
         collectionIndex++;
      }
   }
@@ -794,7 +800,9 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
 
   uint32_t detId = pixdet->geographicalId().rawId();
   size_t simHitGlobalIndex = inputBeginGlobalIndex;  // This needs to stored to create the digi-sim link later
+/*
   std::cout << " in SiPixelDigitizerAlgorithm::accumulateSimHits detId = " << detId << " simHitGlobalIndex = " << simHitGlobalIndex << std::endl;
+*/
   for (std::vector<PSimHit>::const_iterator ssbegin = inputBegin; ssbegin != inputEnd; ++ssbegin, ++simHitGlobalIndex) {
     // std::cout << "  loop on PSimHit in SiPixelDigitizerAlgorithm::accumulateSimHits simHitGlobalIndex = " << simHitGlobalIndex << std::endl;
     // skip hits not in this detector.
@@ -803,11 +811,13 @@ void SiPixelDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_it
     }
 
 
+/*
    std::cout << " Caro Debug : quid du hit ? " << simHitGlobalIndex;
-   std:: cout << "     "        << (*ssbegin).particleType() << " " << (*ssbegin).pabs() << " "
+   std::cout << "     "        << (*ssbegin).particleType() << " " << (*ssbegin).pabs() << " "
                                 << (*ssbegin).energyLoss() << " " << (*ssbegin).tof() << " " << (*ssbegin).trackId()
                                 << " " << (*ssbegin).processType() << " " << (*ssbegin).detUnitId()
                                 << (*ssbegin).entryPoint() << " " << (*ssbegin).exitPoint() << std::endl;
+*/
 
 #ifdef TP_DEBUG
     LogDebug("Pixel Digitizer") << (*ssbegin).particleType() << " " << (*ssbegin).pabs() << " "
@@ -1553,13 +1563,17 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
   size_t ReferenceIndex4CR=0;
   if (UseReweighting) {
     if (hit.processType() == 0) {
+/*
       std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a primary particle "<< std::endl;
+*/
       ReferenceIndex4CR=hitIndex;
       reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
             hit, hit_signal, hitIndex, ReferenceIndex4CR, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
     }
     else {
+/*
       std::cout << "will enter TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight for a  non primary particle "<< std::endl;
+*/
       // As it is not the primary particle, check if the first hit in the SimHit collection corresponding to the same simulated track
       if ((*inputBegin).trackId()==hit.trackId()) {
             ReferenceIndex4CR=FistHitIndex;
@@ -1571,15 +1585,21 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
            uint32_t detId = pixdet->geographicalId().rawId();
            size_t localIndex=FistHitIndex;
            bool find_the_primary=false;
+/*
            std::cout << " try correct matching for hit " << hitIndex << "  starting at " << FistHitIndex << std::endl;
+*/
            for (std::vector<PSimHit>::const_iterator ssbegin = inputBegin; localIndex<hitIndex ; ++ssbegin, ++localIndex) {
               if ((*ssbegin).detUnitId() != detId) {
                   continue;
               }
+/*
               std::cout << " test hit " << localIndex << " trackID "  << (*ssbegin).trackId() << "  "  << (*ssbegin).processType() << std::endl; 
+*/
               if ((*ssbegin).trackId()==hit.trackId() &&  !find_the_primary) {
+/*
                   std::cout << "  ... find trackId macth " << hit.trackId() << "  --> is Primary particle ? " << (*ssbegin).processType() 
                             <<  "  for hit "  << localIndex << std::endl;
+*/
                   // what to do if we find the same trackId but w/o being Primary particle ?
                   if ((*ssbegin).processType()==0) { 
                       ReferenceIndex4CR=localIndex;
@@ -1591,12 +1611,16 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
            }
            if (!find_the_primary) {
               // we haven't found a hit associated to the same trackId --> use the 1st hit of the collection then
+/*
               std::cout << " ...  no match then use the first hit of the collection " << std::endl;
+*/
               ReferenceIndex4CR=FistHitIndex;
               reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
                  (*inputBegin), hit_signal, hitIndex, ReferenceIndex4CR, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
            }
+/*
            std::cout << " --> ReferenceHit used in CR = "  << ReferenceIndex4CR << std::endl;
+*/
         }
     }
   }
@@ -1632,7 +1656,9 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
               // we haven't found a hit associated to the same trackId --> use the 1st hit of the collection then
               ReferenceIndex4CR=FistHitIndex;
            }
+/*
            std::cout << " --> ReferenceHit to be used for CR later = "  << ReferenceIndex4CR << std::endl;
+*/
           }
         }
       }
@@ -1669,19 +1695,25 @@ void SiPixelDigitizerAlgorithm::fillSimHitMaps(std::vector<PSimHit> simHits,
 //      std::cout <<  " loop hit " << printnum << " "  << (*it).detUnitId() << " Eloss  " << (*it).energyLoss() 
 //                << " Points " << (*it).entryPoint() << " " << (*it).exitPoint() << std::endl;
 
+/*
       if (printnum==1) std::cout << " in SiPixelDigitizerAlgorithm::fillSimHitMaps : filling the SimHitMap map "<<  SimHitCollMap[theSubDetTofBin] << " = (" 
                      << subdetID <<   ", " << tofBin << ") with  simHits.size= " << simHits.size(); 
+*/
   }
+/*
   std::cout << " for a SimHitMap.size of " << SimHitMap.size()  << std::endl;
   std::cout << " for a SimHitMap[0].size of " << SimHitMap[0].size()  << std::endl;
   std::cout << " for a SimHitMap[1].size of " << SimHitMap[1].size()  << std::endl;
   std::cout << " for a SimHitMap[2].size of " << SimHitMap[2].size()  << std::endl;
   std::cout << " for a SimHitMap[3].size of " << SimHitMap[3].size()  << std::endl;
+*/
 }
 
 void SiPixelDigitizerAlgorithm::ResetSimHitMaps(){
   SimHitMap.clear();
+/*
   std::cout << " clear SimHitMap  --- size " << SimHitMap.size()  << std::endl;
+*/
 }
 /***********************************************************************/
 
@@ -1829,9 +1861,11 @@ void SiPixelDigitizerAlgorithm::make_digis(float thePixelThresholdInE,
                 const PSimHit& theSimHit = (it2->second)[CFPostoBeUsed];
 //              newClass_Digi_extra.emplace_back(chan, info.hitIndex(), theSimHit.entryPoint(), theSimHit.exitPoint());
                 newClass_Digi_extra.emplace_back(chan, info.hitIndex4ChargeRew(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId(), detID);
+/*
                 std::cout << "for digi " << chan << " with " << adc << " adc in " << (uint32_t) detID 
                       << " : SimHit number "  << info.hitIndex4ChargeRew() << " found in (" << DetId(detID).subdetId() << ", "  <<  tofBin << ") "
                       << " Eloss = "  << theSimHit.energyLoss() << " Entry " << theSimHit.entryPoint() << " Exit " << theSimHit.exitPoint() << std::endl;
+*/
 //                PixelDigiAddTempInfo inputdebugDigiInfo(chan, info.hitIndex4ChargeRew(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId(),detID);
 //                debugDigiInfo.push_back(inputdebugDigiInfo);
 //                debugDigiInfo.emplace_back((int) chan, info.hitIndex4ChargeRew(), theSimHit.entryPoint(), theSimHit.exitPoint(),theSimHit.processType(), theSimHit.trackId(), (uint32_t) detID);
