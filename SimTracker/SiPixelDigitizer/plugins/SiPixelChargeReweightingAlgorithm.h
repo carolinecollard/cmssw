@@ -53,6 +53,12 @@ public:
                          signal_map_type& theSignal,
                          unsigned short int processType,
                          const bool& boolmakeDigiSimLinks);
+  bool digiSignalReweight(LocalPoint hitEntryPoint, LocalPoint hitExitPoint,
+                         PixelDigi& digis_in,
+                         const PixelTopology* topol,
+                         uint32_t detID,
+			 signal_map_type& theDigiSignal);
+//                         unsigned short& new_adc_value);
 
 private:
   // Internal typedef
@@ -69,6 +75,7 @@ private:
   int IDnum, IDden;
 
   const bool UseReweighting;
+  bool applyLateReweighting_;
   const bool PrintClusters;
   const bool PrintTemplates;
 

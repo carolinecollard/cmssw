@@ -88,6 +88,7 @@ namespace cms {
                                      edm::ConsumesCollector& iC)
       : firstInitializeEvent_(true),
         firstFinalizeEvent_(true),
+        applyLateReweighting_(iConfig.exists("applyLateReweighting") ? iConfig.getUntrackedParameter<bool>("applyLateReweighting") : false),
         _pixeldigialgo(),
         hitsProducer(iConfig.getParameter<std::string>("hitsProducer")),
         trackerContainers(iConfig.getParameter<std::vector<std::string> >("RoutList")),
@@ -95,6 +96,8 @@ namespace cms {
         pilotBlades(iConfig.exists("enablePilotBlades") ? iConfig.getParameter<bool>("enablePilotBlades") : false),
         NumberOfEndcapDisks(iConfig.exists("NumPixelEndcap") ? iConfig.getParameter<int>("NumPixelEndcap") : 2) {
     edm::LogInfo("PixelDigitizer ") << "Enter the Pixel Digitizer";
+
+    std::cout << "  Caro : PixelDigitizer  --> applyLateReweighting_ " << applyLateReweighting_ << std::endl;
 
     const std::string alias("simSiPixelDigis");
 
@@ -389,12 +392,10 @@ namespace cms {
             dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, linkcollector.data,
 //                        tempcollector.data, tTopo, randomEngine_);
                         tempcollector, tTopo, randomEngine_);
-        if (!collector.data.empty()) {
-          theDigiVector.push_back(std::move(collector));
-        }
-        if (!linkcollector.data.empty()) {
-          theDigiLinkVector.push_back(std::move(linkcollector));
-        }
+
+        int idebug_tempcollector = tempcollector.size();
+        int idebug_collector = collector.data.size();
+
 //        if (!tempcollector.data.empty()) {
         if (tempcollector.size()>0) {
           std::vector<PixelDigiAddTempInfo>::const_iterator loopNewClass;
@@ -404,7 +405,15 @@ namespace cms {
           int processTFirstOne=-1;
           int nLoopChan=0;
           int allDigi=0;
+//          std::cout << " CARO :  after _pixeldigialgo->digitize but before _pixeldigialgo-> LateSignalReweight " << tempcollector.size();
           for (loopNewClass = tempcollector.begin(); loopNewClass != tempcollector.end(); ++loopNewClass)  {  // ITERATOR OVER DET IDs
+// test CARO 
+//             LocalPoint hitEntryPoint = loopNewClass->entryPoint();
+//             LocalPoint hitExitPoint = loopNewClass->exitPoint();
+//              std::cout << " channel "<<  loopNewClass->channel() << "  " <<   loopNewClass->detID() 
+//                       << "       EntryP :  "<< hitEntryPoint.x() <<  " " << hitEntryPoint.y() << " "  << hitEntryPoint.z()
+//                            << ", ExitP : " << hitExitPoint.x() <<  " " << hitExitPoint.y() << " "  << hitExitPoint.z()  << std::endl;
+
               if (channelPrevious==loopNewClass->channel() && hitFirstOne!=loopNewClass->hitIndex() ) {
                 Val1Digi2Simhit++;               
 /*
@@ -446,8 +455,29 @@ namespace cms {
               allDigi++;
           }
           if (allDigi!= (int) tempcollector.size()) std::cout << " !!!!!!!  problem : not looping on all the digi of the new class" << std::endl;
-  
         }
+
+
+        if (applyLateReweighting_) {
+           // if applyLateReweighting_  is true, the charge reweighting has to be applied on top of the digis
+           _pixeldigialgo->LateSignalReweight(dynamic_cast<const PixelGeomDetUnit*>(iu), collector.data, tempcollector, tTopo, randomEngine_ );
+        }
+
+        int idebug_tempcollector2 = tempcollector.size();
+        int idebug_collector2 = collector.data.size();
+        if (idebug_tempcollector2!=idebug_tempcollector) {
+            std::cout << " Modification of tempcollector.size due to applyLateReweighting_  " << idebug_tempcollector << " ->  " << idebug_tempcollector2
+                 <<  " when digi " << idebug_collector << " --> " << idebug_collector2 << std::endl; 
+        }
+
+
+        if (!collector.data.empty()) {
+          theDigiVector.push_back(std::move(collector));
+        }
+        if (!linkcollector.data.empty()) {
+          theDigiLinkVector.push_back(std::move(linkcollector));
+        }
+  
       }
     }
     _pixeldigialgo->ResetSimHitMaps();

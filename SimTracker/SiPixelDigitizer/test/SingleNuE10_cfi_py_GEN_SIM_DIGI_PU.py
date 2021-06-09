@@ -83,7 +83,9 @@ process.PREMIXoutput = cms.OutputModule("PoolOutputModule",
         dataTier = cms.untracked.string('PREMIX'),
         filterName = cms.untracked.string('')
     ),
-    fileName = cms.untracked.string('/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_CaroPreMix.root'),
+#    fileName = cms.untracked.string('/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_caro_ju1_applyLateCR.root'),
+#    fileName = cms.untracked.string('/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_caro_ju2_applyLateCR.root'),
+    fileName = cms.untracked.string('/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_caro_ju4.root'),
     outputCommands = process.PREMIXEventContent.outputCommands,
     splitLevel = cms.untracked.int32(0)
 )
@@ -95,7 +97,15 @@ process.mix.input.fileNames = cms.untracked.vstring(['/store/relval/CMSSW_10_6_1
 process.XMLFromDBSource.label = cms.string("Extended")
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
-process.mix.digitizers.pixel.UseReweighting = cms.bool(True)
+process.mix.digitizers.pixel.UseReweighting = cms.bool(False)
+#process.mix.digitizers.pixel.UseReweighting = cms.bool(True)
+process.mix.digitizers.pixel.makeDigiSimLinks = cms.untracked.bool(False)
+process.mix.digitizers.pixel.store_SimHitEntryExitPoints = cms.untracked.bool(True)
+process.mix.digitizers.pixel.applyLateReweighting = cms.untracked.bool(True)
+#process.mix.digitizers.pixel.applyLateReweighting = cms.untracked.bool(False)
+process.mix.digitizers.pixel.AddThresholdSmearing  = cms.bool(False)
+#process.mix.digitizers.pixel.AddNoise = cms.bool(False)
+#process.mix.digitizers.pixel.NoiseInElectrons = cms.double(0.)
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2021_realistic', '')
 

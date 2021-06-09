@@ -167,7 +167,7 @@ void SiPixelDigitizerAlgorithm::init(const edm::EventSetup& es) {
     if (!notFound.empty()) {
       for (const auto& entry : notFound) {
         edm::LogError("SiPixelFEDChannelContainer")
-            << "The requested scenario: " << entry << " is not found in the map!!" << std::endl;
+            << "The requested scenario: " << entry << " is not found in the map!! \n";
       }
       throw cms::Exception("SiPixelDigitizerAlgorithm") << "Found: " << notFound.size()
                                                         << " missing scenario(s) in SiPixelStatusScenariosRcd while "
@@ -175,9 +175,10 @@ void SiPixelDigitizerAlgorithm::init(const edm::EventSetup& es) {
     }
   }
 
-/*
-  std::cout << " Caro Test store_SimHitEntryExitPoints_ " << store_SimHitEntryExitPoints_ << std::endl;
-*/
+
+  std::cout << "  Caro : PixelDigitizerAlgorithm  --> UseReweighting " << UseReweighting << std::endl;
+  std::cout << "  Caro : PixelDigitizerAlgorithm  -->  store_SimHitEntryExitPoints_ " << store_SimHitEntryExitPoints_ << std::endl;
+
 
   TheNewSiPixelChargeReweightingAlgorithmClass->init(es);
 
@@ -363,13 +364,11 @@ SiPixelDigitizerAlgorithm::SiPixelDigitizerAlgorithm(const edm::ParameterSet& co
                              << theElectronPerADC << " " << theAdcFullScale << " The delta cut-off is set to " << tMax
                              << " pix-inefficiency " << AddPixelInefficiency;
 
+
   TheNewSiPixelChargeReweightingAlgorithmClass = std::make_unique<SiPixelChargeReweightingAlgorithm>(conf);
 }
 
 std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > SiPixelDigitizerAlgorithm::initCal() const {
-  using std::cerr;
-  using std::cout;
-  using std::endl;
 
   std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > calmap;
   // Prepare for the analog amplitude miss-calibration
@@ -383,18 +382,18 @@ std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > SiPixel
 
     in_file.open(filename, std::ios::in);  // in C++
     if (in_file.bad()) {
-      cout << " File not found " << endl;
+      edm::LogInfo("PixelDigitizer ") << " File not found \n" ;
       return calmap;  // signal error
     }
-    cout << " file opened : " << filename << endl;
+    edm::LogInfo("PixelDigitizer ") << " file opened : " << filename << " \n";
 
     char line[500];
     for (int i = 0; i < 3; i++) {
       in_file.getline(line, 500, '\n');
-      cout << line << endl;
+      edm::LogInfo("PixelDigitizer ") << line << " \n";
     }
 
-    cout << " test map" << endl;
+    edm::LogInfo("PixelDigitizer ") << " test map" << " \n";
 
     float par0, par1, par2, par3;
     int colid, rowid;
@@ -403,17 +402,17 @@ std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > SiPixel
     for (int i = 0; i < (52 * 80); i++) {  // loop over tracks
       in_file >> par0 >> par1 >> par2 >> par3 >> name >> colid >> rowid;
       if (in_file.bad()) {  // check for errors
-        cerr << "Cannot read data file" << endl;
+        edm::LogError("PixelDigitizer") << "Cannot read data file" << " \n";
         return calmap;
       }
       if (in_file.eof() != 0) {
-        cerr << in_file.eof() << " " << in_file.gcount() << " " << in_file.fail() << " " << in_file.good()
-             << " end of file " << endl;
+        edm::LogError("PixelDigitizer") << in_file.eof() << " " << in_file.gcount() << " " << in_file.fail() << " " << in_file.good()
+             << " end of file " << " \n";
         return calmap;
       }
 
-      //cout << " line " << i << " " <<par0<<" "<<par1<<" "<<par2<<" "<<par3<<" "
-      //   <<colid<<" "<<rowid<<endl;
+      //edm::LogInfo("PixelDigitizer ") << " line " << i << " " <<par0<<" "<<par1<<" "<<par2<<" "<<par3<<" "
+      //   <<colid<<" "<<rowid<<" \n";
 
       CalParameters onePix;
       onePix.p0 = par0;
@@ -428,15 +427,15 @@ std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > SiPixel
       // Testing the index conversion, can be skipped
       std::pair<int, int> p = PixelIndices::channelToPixelROC(chan);
       if (rowid != p.first)
-        cout << " wrong channel row " << rowid << " " << p.first << endl;
+        edm::LogInfo("PixelDigitizer ") << " wrong channel row " << rowid << " " << p.first << " \n";
       if (colid != p.second)
-        cout << " wrong channel col " << colid << " " << p.second << endl;
+        edm::LogInfo("PixelDigitizer ") << " wrong channel col " << colid << " " << p.second << " \n";
 
     }  // pixel loop in a ROC
 
-    cout << " map size  " << calmap.size() << " max " << calmap.max_size() << " " << calmap.empty() << endl;
+    edm::LogInfo("PixelDigitizer ") << " map size  " << calmap.size() << " max " << calmap.max_size() << " " << calmap.empty() << " \n";
 
-    //     cout << " map size  " << calmap.size()  << endl;
+    //     edm::LogInfo("PixelDigitizer ") << " map size  " << calmap.size()  << " \n";
     //     map<int,CalParameters,std::less<int> >::iterator ix,it;
     //     map<int,CalParameters,std::less<int> >::const_iterator ip;
     //     for (ix = calmap.begin(); ix != calmap.end(); ++ix) {
@@ -445,7 +444,7 @@ std::map<int, SiPixelDigitizerAlgorithm::CalParameters, std::less<int> > SiPixel
     //       it  = calmap.find(i);
     //       CalParameters y  = (*it).second;
     //       CalParameters z = (*ix).second;
-    //       cout << i <<" "<<p.first<<" "<<p.second<<" "<<y.p0<<" "<<z.p0<<" "<<calmap[i].p0<<endl;
+    //       edm::LogInfo("PixelDigitizer ") << i <<" "<<p.first<<" "<<p.second<<" "<<y.p0<<" "<<z.p0<<" "<<calmap[i].p0<<" \n";
 
     //       //int dummy=0;
     //       //cin>>dummy;
@@ -1113,6 +1112,17 @@ void SiPixelDigitizerAlgorithm::digitize(const PixelGeomDetUnit* pixdet,
 
   make_digis(thePixelThresholdInE, detID, pixdet, digis, simlinks, newClass_Digi_extra, tTopo);
 
+//  if (UseReweighting) {
+/*
+   int NothingImportantJustAddingSomeTrouble = CLHEP::RandGaussQ::shoot(
+                engine, theThresholdInE_BPix_L1, theThresholdSmearing_BPix_L1);  // gaussian smearing
+   if (NothingImportantJustAddingSomeTrouble<-1000000) {
+    std::cout << " print qui n'arrive jamais par construction " << NothingImportantJustAddingSomeTrouble << std::endl;
+   }
+*/
+//  }
+
+
 #ifdef TP_DEBUG
   LogDebug("PixelDigitizer") << "[SiPixelDigitizerAlgorithm] converted " << digis.size() << " PixelDigis in DetUnit"
                              << detID;
@@ -1376,7 +1386,7 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
                                               std::vector<PSimHit>::const_iterator inputEnd,
                                               const PSimHit& hit,
                                               const size_t hitIndex,
-                                              const size_t FistHitIndex,
+                                              const size_t FirstHitIndex,
                                               const unsigned int tofBin,
                                               const PixelGeomDetUnit* pixdet,
                                               const std::vector<SignalPoint>& collection_points) {
@@ -1576,17 +1586,17 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
 */
       // As it is not the primary particle, check if the first hit in the SimHit collection corresponding to the same simulated track
       if ((*inputBegin).trackId()==hit.trackId()) {
-            ReferenceIndex4CR=FistHitIndex;
+            ReferenceIndex4CR=FirstHitIndex;
             reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
                  (*inputBegin), hit_signal, hitIndex, ReferenceIndex4CR, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
       }
       else {
            // loop on all the hit from the 1st of the collection to the hit itself to find the Primary particle of the same trackId
            uint32_t detId = pixdet->geographicalId().rawId();
-           size_t localIndex=FistHitIndex;
+           size_t localIndex=FirstHitIndex;
            bool find_the_primary=false;
 /*
-           std::cout << " try correct matching for hit " << hitIndex << "  starting at " << FistHitIndex << std::endl;
+           std::cout << " try correct matching for hit " << hitIndex << "  starting at " << FirstHitIndex << std::endl;
 */
            for (std::vector<PSimHit>::const_iterator ssbegin = inputBegin; localIndex<hitIndex ; ++ssbegin, ++localIndex) {
               if ((*ssbegin).detUnitId() != detId) {
@@ -1614,7 +1624,7 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
 /*
               std::cout << " ...  no match then use the first hit of the collection " << std::endl;
 */
-              ReferenceIndex4CR=FistHitIndex;
+              ReferenceIndex4CR=FirstHitIndex;
               reweighted = TheNewSiPixelChargeReweightingAlgorithmClass->hitSignalReweight(
                  (*inputBegin), hit_signal, hitIndex, ReferenceIndex4CR, tofBin, topol, detID, theSignal, hit.processType(), makeDSLinks);
            }
@@ -1627,18 +1637,19 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
   if (!reweighted) {
     for (hit_map_type::const_iterator im = hit_signal.begin(); im != hit_signal.end(); ++im) {
       int chan = (*im).first;
-      if (ReferenceIndex4CR!=0) {
+//      if (ReferenceIndex4CR!=0) {  // BUG FIXED
+      if (ReferenceIndex4CR==0) {    // BUG FIXED ON June 2, 2021
          // no determination has been done previously because !UseReweighting
          // we need to determine it now:
         if (hit.processType() == 0) ReferenceIndex4CR =hitIndex;
         else {
          if ((*inputBegin).trackId()==hit.trackId()) {
-            ReferenceIndex4CR=FistHitIndex;
+            ReferenceIndex4CR=FirstHitIndex;
          }
          else {
            // loop on all the hit from the 1st of the collection to the hit itself to find the Primary particle of the same trackId
            uint32_t detId = pixdet->geographicalId().rawId();
-           size_t localIndex=FistHitIndex;
+           size_t localIndex=FirstHitIndex;
            bool find_the_primary=false;
            for (std::vector<PSimHit>::const_iterator ssbegin = inputBegin; localIndex<hitIndex ; ++ssbegin, ++localIndex) {
               if ((*ssbegin).detUnitId() != detId) {
@@ -1654,7 +1665,7 @@ void SiPixelDigitizerAlgorithm::induce_signal(std::vector<PSimHit>::const_iterat
            }
            if (!find_the_primary) {
               // we haven't found a hit associated to the same trackId --> use the 1st hit of the collection then
-              ReferenceIndex4CR=FistHitIndex;
+              ReferenceIndex4CR=FirstHitIndex;
            }
 /*
            std::cout << " --> ReferenceHit to be used for CR later = "  << ReferenceIndex4CR << std::endl;
@@ -2558,4 +2569,184 @@ void SiPixelDigitizerAlgorithm::module_killing_DB(uint32_t detID) {
       }
     }
   }
+}
+
+
+//============================================================================
+void SiPixelDigitizerAlgorithm::LateSignalReweight(const PixelGeomDetUnit* pixdet,
+                                         std::vector<PixelDigi>& digis,
+                                         std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
+                                         const TrackerTopology* tTopo,
+                                         CLHEP::HepRandomEngine* engine) {
+
+  // Function to apply the Charge Reweighting on top of digi in case of PU from mixing library
+  // for time dependent MC
+
+  uint32_t detID = pixdet->geographicalId().rawId();
+  const PixelTopology* topol = &pixdet->specificTopology();
+
+  if (UseReweighting) {
+     std::cout << " ******************************** " << std::endl;
+     std::cout << " ******************************** " << std::endl;
+     std::cout << " *****  INCONSISTENCY !!!   ***** " << std::endl;
+     std::cout << " applyLateReweighting_ and UseReweighting can not be true at the same time for PU ! " << std::endl;
+     std::cout << " ---> DO NOT APPLY CHARGE REWEIGHTING TWICE !!! " << std::endl; 
+     std::cout << " ******************************** " << std::endl;
+     std::cout << " ******************************** " << std::endl;
+     return ;
+  }
+
+
+  std::vector<PixelDigi> New_digis;
+  signal_map_type theDigiSignal;
+
+
+//  std::cout << " the newClass_Digi_extra size " << newClass_Digi_extra.size() ;
+  // loop on digi
+  std::vector<PixelDigi>::const_iterator loopDigi;
+  for (loopDigi = digis.begin(); loopDigi != digis.end(); ++loopDigi)  { 
+    unsigned int DigiChannel = loopDigi->channel();
+    // loop on the extra information to get the SimHit information 
+    int nmatches = 0;
+    bool reweighted;
+    std::vector<PixelDigiAddTempInfo>::const_iterator loopExtra;
+    for (loopExtra = newClass_Digi_extra.begin(); loopExtra!= newClass_Digi_extra.end(); ++loopExtra) {
+       unsigned int loopChannel = loopExtra->channel();
+       uint32_t loopDetID = loopExtra->detID();
+       if (loopDetID==detID && loopChannel == DigiChannel) {
+          nmatches++;
+//          std::cout << " Caro : yes ! matching digi info :  " << nmatches << " matches for channel = " << loopChannel << " of DetID " << loopDetID 
+//              << " = to " << DigiChannel << "  " << detID << std::endl;
+          // now we should decide what to do in case of several matches...
+          if (nmatches==1) {
+             // apply correction and store new info
+//             unsigned short adcval =0 ;
+             LocalPoint hitEntryPoint = loopExtra->entryPoint();
+             LocalPoint hitExitPoint = loopExtra->exitPoint();
+//             std::cout << "      Caro  EntryP :  "<< hitEntryPoint.x() <<  " " << hitEntryPoint.y() << " "  << hitEntryPoint.z() 
+//                                  << ", ExitP : " << hitExitPoint.x() <<  " " << hitExitPoint.y() << " "  << hitExitPoint.z()  << std::endl;
+             PixelDigi MyDigi(loopDigi->row(), loopDigi->column(), loopDigi->adc());
+//             reweighted = TheNewSiPixelChargeReweightingAlgorithmClass-> digiSignalReweight(hitEntryPoint, hitExitPoint, MyDigi, topol, detID, adcval);
+             reweighted = TheNewSiPixelChargeReweightingAlgorithmClass-> digiSignalReweight(hitEntryPoint, hitExitPoint, MyDigi, topol, detID, theDigiSignal);
+//             if (reweighted) { 
+//              std::cout << " digiSignalReweight : OK " << adcval << " to be compared with " << loopDigi->adc() << std::endl;  
+//              New_digis.emplace_back(loopDigi->row(), loopDigi->column(), adcval);
+//             }
+//             else {
+             if (!reweighted) { 
+//              std::cout << " digiSignalReweight : Failed " << std::endl;
+//              New_digis.emplace_back(loopDigi->row(), loopDigi->column(), loopDigi->adc());
+              theDigiSignal[DigiChannel] += Amplitude(loopDigi->adc(),loopDigi->adc());
+             }
+          }
+       }
+     } // end loop extraInfo
+     if (nmatches==0) {
+        // keep old info
+ //        New_digis.emplace_back(loopDigi->row(), loopDigi->column(), loopDigi->adc());
+        theDigiSignal[DigiChannel] += Amplitude(loopDigi->adc(),loopDigi->adc());
+     } 
+   } // end loop digi
+
+//   std::cout << "  --> after the loop :  newClass_Digi_extra size " << newClass_Digi_extra.size() << std::endl ;
+//   std::cout << " Debug Caro size digis " << digis.size()  ;
+   digis.clear();
+
+   // same definition as in SiPixelDigitizerAlgorithm::digitize for thePixelThresholdInE
+   float thePixelThresholdInE = 0.;
+
+
+   bool tartempiont1 = false;
+   bool tartempiont2 = false;
+//   std::cout << " seuil " << theThresholdInE_BPix_L1 << " " << theThresholdInE_BPix_L2 << " " << theThresholdInE_BPix << " " << theThresholdInE_FPix << " ; "
+//        << theThresholdSmearing_BPix_L1 << " " << theThresholdSmearing_BPix_L2 << "  " << theThresholdSmearing_BPix << " " << theThresholdSmearing_FPix ;
+   if (theNoiseInElectrons > 0.) {
+    if (pixdet->type().isTrackerPixel() && pixdet->type().isBarrel()) {  // Barrel modules
+      int lay = tTopo->layer(detID);
+
+//      if (addThresholdSmearing) {
+      if (tartempiont1) {
+        if (pixdet->subDetector() == GeomDetEnumerators::SubDetector::PixelBarrel ||
+            pixdet->subDetector() == GeomDetEnumerators::SubDetector::P1PXB) {
+          if (lay == 1) {
+            thePixelThresholdInE = CLHEP::RandGaussQ::shoot(
+                engine, theThresholdInE_BPix_L1, theThresholdSmearing_BPix_L1);  // gaussian smearing
+          } else if (lay == 2) {
+            thePixelThresholdInE = CLHEP::RandGaussQ::shoot(
+                engine, theThresholdInE_BPix_L2, theThresholdSmearing_BPix_L2);  // gaussian smearing
+          } else {
+            thePixelThresholdInE =
+                CLHEP::RandGaussQ::shoot(engine, theThresholdInE_BPix, theThresholdSmearing_BPix);  // gaussian smearing
+          }
+        }
+      } else {
+
+        if (pixdet->subDetector() == GeomDetEnumerators::SubDetector::PixelBarrel ||
+            pixdet->subDetector() == GeomDetEnumerators::SubDetector::P1PXB) {
+          if (lay == 1) {
+            thePixelThresholdInE = theThresholdInE_BPix_L1;
+          } else if (lay == 2) {
+            thePixelThresholdInE = theThresholdInE_BPix_L2;
+          } else {
+            thePixelThresholdInE = theThresholdInE_BPix;  // no smearing
+          }
+        }
+
+      }
+
+    } else if (pixdet->type().isTrackerPixel()) {  // Forward disks modules
+
+      if (tartempiont2) {
+//      if (addThresholdSmearing) {
+        thePixelThresholdInE =
+            CLHEP::RandGaussQ::shoot(engine, theThresholdInE_FPix, theThresholdSmearing_FPix);  // gaussian smearing
+      } else {
+
+        thePixelThresholdInE = theThresholdInE_FPix;  // no smearing
+
+      }
+
+    } else {
+      throw cms::Exception("NotAPixelGeomDetUnit") << "Not a pixel geomdet unit" << detID;
+    }
+  }
+
+//  std::cout << "  --> " << thePixelThresholdInE << std::endl;
+/*
+   thePixelThresholdInE = CLHEP::RandGaussQ::shoot(
+                engine, theThresholdInE_BPix_L1, theThresholdSmearing_BPix_L1);  // gaussian smearing
+*/
+
+
+  
+  // difference with the original definition --> we need a threshold in ADC
+  int Thresh_inADC = int(thePixelThresholdInE/theElectronPerADC);
+  // ----- end of definition of thePixelThresholdInE
+  Thresh_inADC = 30;
+
+  for (signal_map_const_iterator i = theDigiSignal.begin(); i != theDigiSignal.end(); ++i) {
+    float signalInADC = (*i).second;  // signal in ADC 
+
+    if (signalInADC>0.) {
+        if (signalInADC >= Thresh_inADC) {
+        int chan = (*i).first;  // channel number
+        std::pair<int, int> ip = PixelDigi::channelToPixel(chan);
+        int adc = int(signalInADC);
+        if (signalInADC>theAdcFullScale) adc=theAdcFullScale;  // Check maximum value
+
+#ifdef TP_DEBUG
+        LogDebug("Pixel Digitizer") << (*i).first << " " << (*i).second << " " << signalInADC << " " << adc
+                                  << ip.first << " " << ip.second;
+#endif
+
+        // Load digis
+        digis.emplace_back(ip.first, ip.second, adc);
+        }
+    }
+  } // end loop on theDigiSignal
+  theDigiSignal.clear();
+
+//   std::cout << " Debug Caro size digis -- end " << digis.size() <<"  "  << New_digis.size() ;
+//   digis=New_digis;
+//   std::cout << " -> " << digis.size() << std::endl;
 }

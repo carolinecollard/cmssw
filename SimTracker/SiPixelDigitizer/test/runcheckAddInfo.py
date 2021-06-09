@@ -30,7 +30,9 @@ process.MessageLogger = cms.Service("MessageLogger",
 process.source = cms.Source("PoolSource",
     fileNames =  cms.untracked.vstring(
 #    'file:/afs/cern.ch/work/d/dkotlins/public/MC/mu/pt100_71_pre7/digis/digis2_postls171.root'
-    'file:/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_CaroPreMix_PURun2_orig.root'
+#    'file:/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_CaroPreMix_PURun2_orig.root'
+#    'file:/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_CaroPreMix_PURun2_RefHit.root'
+    'file:/opt/sbg/cms/ui3_data1/ccollard/Pixels/test_CaroPreMix_100PU.root'
     )
 )
 

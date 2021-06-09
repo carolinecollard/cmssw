@@ -77,7 +77,7 @@ using namespace sipixelobjects;
 
 void SiPixelChargeReweightingAlgorithm::init(const edm::EventSetup& es) {
   // Read template files for charge reweighting
-  if (UseReweighting) {
+  if (UseReweighting || applyLateReweighting_) {
     edm::ESHandle<SiPixel2DTemplateDBObject> SiPixel2DTemp_den;
     es.get<SiPixel2DTemplateDBObjectRcd>().get("denominator", SiPixel2DTemp_den);
     dbobject_den = SiPixel2DTemp_den.product();
@@ -107,10 +107,12 @@ SiPixelChargeReweightingAlgorithm::SiPixelChargeReweightingAlgorithm(const edm::
       IDden(conf.exists("TemplateIDdenominator") ? conf.getParameter<int>("TemplateIDdenominator") : 0),
 
       UseReweighting(conf.getParameter<bool>("UseReweighting")),
+      applyLateReweighting_(conf.exists("applyLateReweighting") ? conf.getUntrackedParameter<bool>("applyLateReweighting") : false),
       PrintClusters(conf.getParameter<bool>("PrintClusters")),
       PrintTemplates(conf.getParameter<bool>("PrintTemplates")) {
   edm::LogVerbatim("PixelDigitizer ") << "SiPixelChargeReweightingAlgorithm constructed"
-                                      << " with UseReweighting = " << UseReweighting;
+                                      << " with UseReweighting = " << UseReweighting 
+                                      << " and applyLateReweighting_ = " << applyLateReweighting_ ;
 }
 
 //=========================================================================
@@ -628,4 +630,283 @@ void SiPixelChargeReweightingAlgorithm::printCluster(float arr[TXSIZE][TYSIZE]) 
     std::cout << std::endl;
   }
   std::cout.copyfmt(std::ios(nullptr));
+}
+
+
+// Test of function to apply the Charge Reweighting on top of the digi
+bool SiPixelChargeReweightingAlgorithm::digiSignalReweight(LocalPoint hitEntryPoint, LocalPoint hitExitPoint,
+                                                          PixelDigi& digis_in,
+                                                          const PixelTopology* topol,
+                                                          uint32_t detID,
+                                                          signal_map_type& theDigiSignal) {
+//                                                          unsigned short& new_adc_value) {
+
+/*
+  int irow_min = topol->nrows();
+  int irow_max = 0;
+  int icol_min = topol->ncolumns();
+  int icol_max = 0;
+*/
+ 
+//  std::cout << "  Debug in digiSignalReweight " << std::endl;
+
+//  int chan = digis_in.channel();
+  int row_digi = digis_in.row();
+  int col_digi = digis_in.column();
+  float chargeBefore = digis_in.adc();
+//  new_adc_value = chargeBefore;
+  float chargeAfter = 0;
+
+/*
+  std::pair<int, int> pixelWithCharge = PixelDigi::channelToPixel(chan);
+
+  if (pixelWithCharge.first < irow_min)
+      irow_min = pixelWithCharge.first;
+  if (pixelWithCharge.first > irow_max)
+      irow_max = pixelWithCharge.first;
+  if (pixelWithCharge.second < icol_min)
+      icol_min = pixelWithCharge.second;
+  if (pixelWithCharge.second > icol_max)
+      icol_max = pixelWithCharge.second;
+*/
+
+//  std::cout << "  Debug in digiSignalReweight 2" << std::endl;
+  LocalVector direction = hitExitPoint - hitEntryPoint;  
+//  std::cout << "  Debug in digiSignalReweight 3 " <<  direction.z() << std::endl;
+  float trajectoryScaleToPosition = hitEntryPoint.z() / direction.z();
+
+//  std::cout << "  Debug in digiSignalReweight 4 " <<  trajectoryScaleToPosition<< std::endl;
+  if ((hitEntryPoint.z() > 0 && direction.z() < 0) || (hitEntryPoint.z() < 0 && direction.z() > 0)) {
+    trajectoryScaleToPosition *= -1;
+  }
+
+  LocalPoint hitPosition = hitEntryPoint + trajectoryScaleToPosition * direction;
+
+  // addition as now the hit himself is not available 
+  // https://github.com/cms-sw/cmssw/blob/master/SimDataFormats/TrackingHit/interface/PSimHit.h#L52
+  LocalPoint hitLocalPosition = hitEntryPoint + 0.5 *direction;
+  MeasurementPoint hitPositionPixel = topol->measurementPosition(hitLocalPosition);
+
+  std::pair<int, int> hitPixel =
+      std::pair<int, int>(int(floor(hitPositionPixel.x())), int(floor(hitPositionPixel.y())));
+
+  MeasurementPoint originPixel = MeasurementPoint(hitPixel.first - THX + 0.5, hitPixel.second - THY + 0.5);
+  LocalPoint origin = topol->localPosition(originPixel);
+
+//  MeasurementPoint hitEntryPointPixel = topol->measurementPosition(hit.entryPoint());
+//  MeasurementPoint hitExitPointPixel = topol->measurementPosition(hit.exitPoint());
+  MeasurementPoint hitEntryPointPixel = topol->measurementPosition(hitEntryPoint);
+  MeasurementPoint hitExitPointPixel = topol->measurementPosition(hitExitPoint);
+
+//  std::cout << "  Debug in digiSignalReweight 5 " <<  hitEntryPointPixel.x() << std::endl;
+  std::pair<int, int> entryPixel =
+      std::pair<int, int>(int(floor(hitEntryPointPixel.x())), int(floor(hitEntryPointPixel.y())));
+  std::pair<int, int> exitPixel =
+      std::pair<int, int>(int(floor(hitExitPointPixel.x())), int(floor(hitExitPointPixel.y())));
+
+  int hitcol_min, hitcol_max, hitrow_min, hitrow_max;
+  if (entryPixel.first > exitPixel.first) {
+    hitrow_min = exitPixel.first;
+    hitrow_max = entryPixel.first;
+  } else {
+    hitrow_min = entryPixel.first;
+    hitrow_max = exitPixel.first;
+  }
+
+  if (entryPixel.second > exitPixel.second) {
+    hitcol_min = exitPixel.second;
+    hitcol_max = entryPixel.second;
+  } else {
+    hitcol_min = entryPixel.second;
+    hitcol_max = exitPixel.second;
+  }
+
+//  std::cout << "  Debug in digiSignalReweight 6 "  << std::endl;
+#ifdef TP_DEBUG
+  LocalPoint CMSSWhitPosition = hitLocalPosition;
+
+  LogDebug("Pixel Digitizer") << "\n"
+                              << "HitPosition:"
+                              << "\n"
+                              << "Hit entry x/y/z: " << hitEntryPoint().x() << "  " << hitEntryPoint().y() << "  "
+                              << hitEntryPoint().z() << "  "
+                              << "Hit exit x/y/z: " << hitExitPoint().x() << "  " << hitExitPoint().y() << "  "
+                              << hitExitPoint().z() << "  "
+
+                              << "Pixel Pos - X: " << hitPositionPixel.x() << " Y: " << hitPositionPixel.y() << "\n"
+                              << "Cart.Cor. - X: " << CMSSWhitPosition.x() << " Y: " << CMSSWhitPosition.y() << "\n"
+                              << "Z=0 Pos - X: " << hitPosition.x() << " Y: " << hitPosition.y() << "\n"
+
+                              << "Origin of the template:"
+                              << "\n"
+                              << "Pixel Pos - X: " << originPixel.x() << " Y: " << originPixel.y() << "\n"
+                              << "Cart.Cor. - X: " << origin.x() << " Y: " << origin.y() << "\n"
+                              << "\n"
+                              << "Entry/Exit:"
+                              << "\n"
+                              << "Entry - X: " << hitEntryPoint().x() << " Y: " << hitEntryPoint().y()
+                              << " Z: " << hitEntryPoint().z() << "\n"
+                              << "Exit - X: " << hitExitPoint().x() << " Y: " << hitExitPoint().y()
+                              << " Z: " << hitExitPoint().z() << "\n"
+
+                              << "Entry - X Pixel: " << hitEntryPointPixel.x() << " Y Pixel: " << hitEntryPointPixel.y()
+                              << "\n"
+                              << "Exit - X Pixel: " << hitExitPointPixel.x() << " Y Pixel: " << hitExitPointPixel.y()
+                              << "\n"
+
+                              << "row min: " << irow_min << " col min: " << icol_min << "\n";
+#endif
+
+//  if (!(irow_min <= hitrow_max && irow_max >= hitrow_min && icol_min <= hitcol_max && icol_max >= hitcol_min)) {
+  if (!(row_digi <= hitrow_max && row_digi >= hitrow_min && col_digi <= hitcol_max && col_digi >= hitcol_min)) {
+    // The clusters do not have an overlap, hence the hit is NOT reweighted
+  /*  
+     std::cout << " CARO : clus not reweight as no overlap, " 
+                              << "row min: " << row_digi << "<= hitrow_max: " << hitrow_max 
+                              << ", row max: " << row_digi << ">= hitrow_min: "<< hitrow_min
+                              << ", col min: " << col_digi << "<= hitcol_max: "<< hitcol_max 
+                              << ", col max: " << col_digi << ">= hitcol_min: "<< hitcol_min <<std::endl;
+   */
+    return false;
+  }
+
+  float cmToMicrons = 10000.f;
+
+//  std::cout << "  Debug in digiSignalReweight 7 "  << hitPosition.x() << std::endl;
+  track[0] = (hitPosition.x() - origin.x()) * cmToMicrons;
+  track[1] = (hitPosition.y() - origin.y()) * cmToMicrons;
+  track[2] = 0.0f;  //Middle of sensor is origin for Z-axis
+  track[3] = direction.x();
+  track[4] = direction.y();
+  track[5] = direction.z();
+
+//  std::cout << "  Debug in digiSignalReweight 8 "  << track[0] << " " << track[1] << " " << track[2] << " " << track[3] << " " << track[4] << " " << track[5] << std::endl;
+  array_2d pixrewgt(boost::extents[TXSIZE][TYSIZE]);
+
+  for (int row = 0; row < TXSIZE; ++row) {
+    for (int col = 0; col < TYSIZE; ++col) {
+      pixrewgt[row][col] = 0;
+    }
+  }
+
+  for (int row = 0; row < TXSIZE; ++row) {
+    xdouble[row] = topol->isItBigPixelInX(hitPixel.first + row - THX);
+  }
+
+  for (int col = 0; col < TYSIZE; ++col) {
+    ydouble[col] = topol->isItBigPixelInY(hitPixel.second + col - THY);
+  }
+
+/*
+  for (int row = 0; row < TXSIZE; ++row) {
+    for (int col = 0; col < TYSIZE; ++col) {
+      //Fill charges into 21x13 Pixel Array with hitPixel in centre
+      pixrewgt[row][col] =
+          // put here the digi info well translated with respect to the hitPixel centre.  CARO !!! HERE ACTION !!!
+          hitSignal[PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY)];
+    }
+  }
+*/
+ int distance_x_ = hitPixel.first - row_digi;
+ int distance_y_ = hitPixel.second - col_digi;
+ if (distance_x_<0) distance_x_*=-1;
+ if (distance_y_<0) distance_y_*=-1;
+//  std::cout << "  Debug in digiSignalReweight 9 "  << distance_x_ << "  " << distance_y_  << std::endl;
+ if ((distance_x_ > THX) || (distance_y_ > THY)) {
+    // the digi is not inside the area used for the reweighting 
+//    std::cout << " CARO : the digi is not inside the area used for the reweighting " << std::endl;
+    return false;
+ }
+ int i_transformed_row = row_digi - hitPixel.first  + THX;
+ int i_transformed_col = col_digi - hitPixel.second + THY; 
+
+ if ( i_transformed_row<0 || i_transformed_row>TXSIZE || i_transformed_col<0 || i_transformed_col>TYSIZE) {
+    // wrong transformation of the coordinates
+//    std::cout << " CARO : oups     .... wrong transformation of the coordinates in digiSignalReweighting " << std::endl;
+    return false;
+ }
+  
+ pixrewgt[i_transformed_row][i_transformed_col] = digis_in.adc();
+// std::cout << "  Debug in digiSignalReweight 10 "  << digis_in.adc() <<std::endl;
+
+  if (PrintClusters) {
+    std::cout << "Cluster before reweighting: " << std::endl;
+    printCluster(pixrewgt);
+  }
+
+  int ierr;
+  // for unirradiated: 2nd argument is IDden
+  // for irradiated: 2nd argument is IDnum
+  //
+  int ID1 = dbobject_num->getTemplateID(detID);
+  int ID0 = dbobject_den->getTemplateID(detID);
+
+  if (ID0 == ID1) {
+      std::cout << " same template for num and den " << std::endl;
+      return false;
+  }
+
+//  std::cout << "  Debug in digiSignalReweight 11 "<< std::endl;
+  ierr = PixelTempRewgt2D(ID0, ID1, pixrewgt);
+//  std::cout << "  Debug in digiSignalReweight 12 "<< ierr << std::endl;
+
+  if (ierr != 0) {
+#ifdef TP_DEBUG
+    LogDebug("PixelDigitizer ") << "Cluster Charge Reweighting did not work properly.";
+#endif
+    
+//    std::cout << " CARO : Cluster Charge Reweighting did not work properly " <<  ierr << std::endl;
+    return false;
+  }
+
+  if (PrintClusters) {
+    std::cout << "Cluster after reweighting: " << std::endl;
+    printCluster(pixrewgt);
+  }
+
+/* 
+// ******* SCENARIO IF ONLY THE CHARGE OF THE DIGI CHANNEL IS AFFECTED BY CHARGE REWEIGHTING *****
+// std::cout << "  Debug in digiSignalReweight 13 " << std::endl;
+ int charge = pixrewgt[i_transformed_row][i_transformed_col];
+// std::cout << "  Debug in digiSignalReweight 14 " << charge << std::endl;
+ if (row_digi  >= 0 && row_digi < topol->nrows() &&
+    col_digi >= 0 && col_digi < topol->ncolumns() && charge > 0) {
+    chargeAfter= charge;
+    new_adc_value= chargeAfter;
+ }
+*/
+// ******* SCENARIO IF MORE THAN ONE CHANNEL IS AFFECTED BY CHARGE REWEIGHTING *****
+  for (int row = 0; row < TXSIZE; ++row) {
+    for (int col = 0; col < TYSIZE; ++col) {
+      float charge = 0;
+      charge = pixrewgt[row][col];
+      if ((hitPixel.first + row - THX) >= 0 && (hitPixel.first + row - THX) < topol->nrows() &&
+          (hitPixel.second + col - THY) >= 0 && (hitPixel.second + col - THY) < topol->ncolumns() && charge > 0) {
+        chargeAfter += charge;
+        theDigiSignal[PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY)] +=
+                                   SiPixelDigitizerAlgorithm::Amplitude(charge, charge);
+
+/*
+        std::cout << "        --> reweighted chan " << PixelDigi::pixelToChannel(hitPixel.first + row - THX, hitPixel.second + col - THY) << " amplitude " << charge << std::endl;
+*/
+      }
+    }
+  }
+
+// std::cout << "  Debug in digiSignalReweight 14 " << chargeAfter << std::endl;
+  if (chargeBefore != 0. && chargeAfter == 0.) {
+
+//    std::cout << " CARO : chargeAfter = 0 while chargeBefore not "  << std::endl;
+
+    return false;
+  }
+
+  if (PrintClusters) {
+    std::cout << std::endl;
+    std::cout << "Charges (before->after): " << chargeBefore << " -> " << chargeAfter << std::endl;
+    std::cout << "Charge loss: " << (1 - chargeAfter / chargeBefore) * 100 << " %" << std::endl << std::endl;
+  }
+
+//  std::cout << "  Debug in digiSignalReweight 15" << std::endl;
+  return true;
 }

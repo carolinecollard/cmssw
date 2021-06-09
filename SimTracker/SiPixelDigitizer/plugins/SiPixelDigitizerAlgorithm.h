@@ -88,6 +88,12 @@ public:
   void init_DynIneffDB(const edm::EventSetup&, const unsigned int&);
   std::unique_ptr<PixelFEDChannelCollection> chooseScenario(PileupMixingContent* puInfo, CLHEP::HepRandomEngine*);
 
+  void LateSignalReweight(const PixelGeomDetUnit* pixdet,                
+                         std::vector<PixelDigi>& digis,                          
+                         std::vector<PixelDigiAddTempInfo>& newClass_Digi_extra,
+                         const TrackerTopology* tTopo,
+                         CLHEP::HepRandomEngine* engine);
+
 
   // for premixing
   void calculateInstlumiFactor(const std::vector<PileupSummaryInfo>& ps,
@@ -438,7 +444,7 @@ private:
                      std::vector<PSimHit>::const_iterator inputEnd,
                      const PSimHit& hit,
                      const size_t hitIndex,
-                     const size_t FistHitIndex,
+                     const size_t FirstHitIndex,
                      const unsigned int tofBin,
                      const PixelGeomDetUnit* pixdet,
                      const std::vector<SignalPoint>& collection_points);
