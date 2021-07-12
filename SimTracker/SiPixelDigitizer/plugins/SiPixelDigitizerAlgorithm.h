@@ -178,6 +178,7 @@ private:
   edm::ESHandle<SiPixelQualityProbabilities> scenarioProbabilityHandle;
   edm::ESHandle<PixelFEDChannelCollectionMap> PixelFEDChannelCollectionMapHandle;
   // Define internal classes
+  //
 
   // definition class
   //
@@ -340,6 +341,17 @@ private:
 
 //  std::vector<PixelDigiAddTempInfo> debugDigiInfo;
 
+  // counters
+  int icountStrategy1N;
+  int icountStrategy2N;
+  int icountStrategy3N;
+  int icountStrategy4N;
+
+  int icountStrategy1F;
+  int icountStrategy2F;
+  int icountStrategy3F;
+  int icountStrategy4F;
+
 private:
   // Variables
   //external parameters
@@ -412,6 +424,7 @@ private:
   // pixel aging
   const bool AddPixelAging;
   const bool UseReweighting;
+
 
   // The PDTable
   //HepPDTable *particleTable;
